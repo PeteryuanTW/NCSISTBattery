@@ -1,0 +1,227 @@
+﻿@page "/Simulation"
+@rendermode InteractiveServer
+
+@inject SimulationService simulationService
+@inject MyToastService myToastService
+
+<DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
+	<Rows>
+		<DxGridLayoutRow Height="4fr"></DxGridLayoutRow>
+		<DxGridLayoutRow Height="5fr"></DxGridLayoutRow>
+	</Rows>
+	<Columns>
+		<DxGridLayoutColumn Width="2fr"></DxGridLayoutColumn>
+		<DxGridLayoutColumn Width="2fr"></DxGridLayoutColumn>
+		<DxGridLayoutColumn Width="2fr"></DxGridLayoutColumn>
+		<DxGridLayoutColumn Width="2fr"></DxGridLayoutColumn>
+		<DxGridLayoutColumn Width="2fr"></DxGridLayoutColumn>
+		<DxGridLayoutColumn Width="2fr"></DxGridLayoutColumn>
+	</Columns>
+	<Items>
+		<DxGridLayoutItem Row="0" Column="0" ColumnSpan="2">
+			<Template>
+				<div class="p-2">
+					<DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+						<DxFormLayoutItem Caption="電池種類">
+							<DxComboBox Data="@BatteryConfigs" Value="@batteryConfig" ValueChanged="(BatteryConfig batteryConfig)=>SelectNewBattery(batteryConfig)" EditFormat="{0}">
+								<Columns>
+									<DxListEditorColumn Caption="電池種類" FieldName="@nameof(BatteryConfig.Type)" />
+									<DxListEditorColumn Caption="重量下限" FieldName="@nameof(BatteryConfig.MinWeight)" />
+									<DxListEditorColumn Caption="重量上限" FieldName="@nameof(BatteryConfig.MaxWeight)" />
+								</Columns>
+							</DxComboBox>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem Caption="熱片數量限制">
+							<DxSpinEdit Value="@pieceLimited" ReadOnly="true"></DxSpinEdit>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem Caption="熱片數量/每一治具" BeginRow="true">
+							<DxSpinEdit @bind-Value="@amountInJig"></DxSpinEdit>
+						</DxFormLayoutItem>
+
+						<DxFormLayoutItem Caption="產出電池個數" BeginRow="true">
+							<DxSpinEdit @bind-Value="@outputBatteryAmount"></DxSpinEdit>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem BeginRow="true">
+							<DxButton Text="產生亂數" Click="GenerateRandom" Enabled="@canGenerateRandom"></DxButton>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem BeginRow="true">
+							<DxToolbar>
+								<Items>
+									<DxToolbarItem Text="@((targetHeat*0.985).ToString("0.00"))" BeginGroup="true" />
+									<DxToolbarItem Text="@(targetHeat.ToString("0.00"))" BeginGroup="true" />
+									<DxToolbarItem Text="@((targetHeat*1.015).ToString("0.00"))" BeginGroup="true" />
+								</Items>
+							</DxToolbar>
+						</DxFormLayoutItem>
+					</DxFormLayout>
+				</div>
+			</Template>
+		</DxGridLayoutItem>
+		<DxGridLayoutItem Row="0" Column="2" ColumnSpan="2">
+			<Template>
+				<div class="p-2">
+					@if (recipe.Any())
+					{
+						<DxGrid Data="@recipe">
+							<Columns>
+								<DxGridDataColumn Caption="配方順序" FieldName="@nameof(BatteryRecipe.RecipeIndex)" />
+								<DxGridDataColumn Caption="材料種類" FieldName="@nameof(BatteryRecipe.Type)" />
+							</Columns>
+						</DxGrid>
+					}
+				</div>
+
+			</Template>
+		</DxGridLayoutItem>
+		<DxGridLayoutItem Row="0" Column="4" ColumnSpan="2">
+			<Template>
+				<div class="p-2">
+					
+				</div>
+			</Template>
+		</DxGridLayoutItem>
+		<DxGridLayoutItem Row="1" Column="0" ColumnSpan="3">
+			<Template>
+				@if (jigs.Any())
+				{
+					<DxTabs ActiveTabIndex="@selectedJidIndex" ActiveTabIndexChanged="SelectedNewJig">
+						@foreach (Jig jig in jigs)
+						{
+							<DxTabPage Text="@($"{jig.Name}({jig.Type})")">
+								<DxGrid Data="@jig.HeatPiecesList">
+									<Columns>
+										<DxGridDataColumn Caption="治具名稱" FieldName="@nameof(HeatPiece.JigName)" />
+										<DxGridDataColumn Caption="治具內順序" FieldName="@nameof(HeatPiece.JigIndex)" />
+										<DxGridDataColumn Caption="重量(公克)" FieldName="@nameof(HeatPiece.Weight)" />
+										<DxGridDataColumn Caption="卡/克" FieldName="@nameof(HeatPiece.HeatPerGram)" />
+										<DxGridDataColumn Caption="單片總熱量" FieldName="@nameof(HeatPiece.TotalHeat)" />
+									</Columns>
+								</DxGrid>
+							</DxTabPage>
+						}
+					</DxTabs>
+				}
+			</Template>
+		</DxGridLayoutItem>
+		<DxGridLayoutItem Row="1" Column="3" ColumnSpan="3">
+			<Template>
+				<div class="h-100">
+					@if (jigs.Any())
+					{
+						<DxChart @ref="@dxChart" T="HeatPiece" CssClass="h-100">
+							<DxChartLegend Visible="false"></DxChartLegend>
+							<DxChartPane Name="WeightPane" />
+							<DxChartPane Name="HeatPerGramPane" />
+							<DxChartPane Name="TotalHeatPane" />
+							<DxChartSplineSeries T="HeatPiece"
+												 Pane="WeightPane"
+												 TArgument="double"
+												 TValue="double"
+												 Data="@jigs[selectedJidIndex].HeatPiecesList"
+												 ArgumentField="x=>x.JigIndex"
+												 ValueField="x=>x.Weight">
+								<DxChartSeriesPoint Symbol=ChartPointSymbol.Circle
+													Size="5"
+													HoverMode="ChartSeriesPointHoverMode.None" />
+							</DxChartSplineSeries>
+							<DxChartSplineSeries T="HeatPiece"
+												 Pane="HeatPerGramPane"
+												 TArgument="double"
+												 TValue="double"
+												 Data="@jigs[selectedJidIndex].HeatPiecesList"
+												 ArgumentField="x=>x.JigIndex"
+												 ValueField="x=>x.HeatPerGram">
+								<DxChartSeriesPoint Symbol=ChartPointSymbol.Circle
+													Size="5"
+													HoverMode="ChartSeriesPointHoverMode.None" />
+							</DxChartSplineSeries>
+							<DxChartSplineSeries T="HeatPiece"
+												 Pane="TotalHeatPane"
+												 TArgument="double"
+												 TValue="double"
+												 Data="@jigs[selectedJidIndex].HeatPiecesList"
+												 ArgumentField="x=>x.JigIndex"
+												 ValueField="x=>x.TotalHeat">
+								<DxChartSeriesPoint Symbol=ChartPointSymbol.Circle
+													Size="5"
+													HoverMode="ChartSeriesPointHoverMode.None" />
+							</DxChartSplineSeries>
+						</DxChart>
+					}
+				</div>
+			</Template>
+		</DxGridLayoutItem>
+	</Items>
+
+</DxGridLayout>
+
+
+
+
+
+@code {
+	DxChart? dxChart { get; set; }
+
+	private int amountInJig;
+	private List<Jig> jigs = new();
+	private int selectedJidIndex;
+
+	private IEnumerable<BatteryConfig> BatteryConfigs;
+	private BatteryConfig? batteryConfig;
+	private bool batterySelected => batteryConfig != null;
+
+	private int pieceLimited => batterySelected ? batteryConfig.LimitedPieces : 0;
+
+	private bool canGenerateRandom => batterySelected && amountInJig > 0 && outputBatteryAmount > 0;
+
+	private double targetHeat;
+
+	public List<BatteryRecipe> recipe = new();
+
+	private int outputBatteryAmount;
+	private List<BatteryDetail> batteryDetails = new();
+
+	private int round;
+
+
+	protected override async Task OnInitializedAsync()
+	{
+		jigs = simulationService.Jigs;
+		BatteryConfigs = await simulationService.GetBatteryConfigs();
+		batteryConfig = simulationService.TargetBattery;
+		recipe = simulationService.BatteryRecipes;
+		await InvokeAsync(StateHasChanged);
+		//recipe = await simulationService.GetBatteryRecipeByBatteryName();
+	}
+
+	private async void SelectNewBattery(BatteryConfig batteryConfig)
+	{
+		await simulationService.SetBattery(batteryConfig);
+		this.batteryConfig = batteryConfig;
+		//recipe = batterySelected ? await simulationService.GetBatteryRecipeByBatteryName(batteryConfig.Type) : new List<BatteryRecipe>();
+		recipe = simulationService.BatteryRecipes;
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private void SelectedNewJig(int index)
+	{
+		selectedJidIndex = index;
+		dxChart?.RefreshData();
+		InvokeAsync(StateHasChanged);
+	}
+
+	private async Task GenerateRandom()
+	{
+		await simulationService.InitJigs();
+		await simulationService.RamdomAssignHeatPieceToJigs(amountInJig, 307, 3);
+		dxChart?.RefreshData();
+		GetStatistic();
+		simulationService.InitBatteryDetails(outputBatteryAmount, targetHeat * 0.985, targetHeat * 1.015);
+	}
+
+	private void GetStatistic()
+	{
+		var heatPiece = jigs.SelectMany(x => x.HeatPiecesList);
+		targetHeat = heatPiece.Average(x => x.TotalHeat) * batteryConfig.LimitedPieces;
+	}
+}

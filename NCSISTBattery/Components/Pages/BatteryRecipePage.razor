@@ -1,0 +1,115 @@
+﻿@page "/BatteryRecipe"
+@rendermode InteractiveServer
+@inject DataService dataService
+
+<DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
+	<Rows>
+		<DxGridLayoutRow Height="2fr"></DxGridLayoutRow>
+		<DxGridLayoutRow Height="8fr"></DxGridLayoutRow>
+	</Rows>
+	<Columns>
+		<DxGridLayoutColumn Width="2fr"></DxGridLayoutColumn>
+		<DxGridLayoutColumn Width="8fr"></DxGridLayoutColumn>
+	</Columns>
+	<Items>
+		<DxGridLayoutItem Row="0" Column="0">
+			<Template>
+				<DxFormLayout CssClass="m-2 p-3 rounded border">
+					<DxFormLayoutItem>
+						<DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+							<Items>
+								<DxToolbarItem RenderStyle="ButtonRenderStyle.Info" IconCssClass="oi oi-plus" Enabled="@(!editable)" BeginGroup="true" />
+								<DxToolbarItem RenderStyle="ButtonRenderStyle.Primary" IconCssClass="oi oi-pencil" Enabled="@(hasBatteryConfig && !editable)" Click="StartEdit" BeginGroup="true" />
+								<DxToolbarItem RenderStyle="ButtonRenderStyle.Success" IconCssClass="oi oi-check" Enabled="@(editable)" Click="SaveRecipe" BeginGroup="true" />
+								<DxToolbarItem RenderStyle="ButtonRenderStyle.Danger" IconCssClass="oi oi-trash" Enabled=@(hasBatteryConfig && !editable) BeginGroup="true" />
+							</Items>
+						</DxToolbar>
+					</DxFormLayoutItem>
+					<DxFormLayoutItem Caption="電池種類" CaptionPosition="CaptionPosition.Vertical" BeginRow="true">
+						<DxComboBox Value="@targetBattery" SelectedItemChanged="@((BatteryConfig? batteryConfig)=>BatteryConfigSelected(batteryConfig))" Data="@batteryConfigs" EditFormat="{0}">
+							<Columns>
+								<DxListEditorColumn FieldName="@nameof(BatteryConfig.Type)" />
+							</Columns>
+						</DxComboBox>
+					</DxFormLayoutItem>
+				</DxFormLayout>
+
+			</Template>
+		</DxGridLayoutItem>
+		<DxGridLayoutItem Row="1" Column="0">
+			<Template>
+				<DxFormLayout CssClass="m-2 p-3 rounded border ">
+
+					@if (hasBatteryConfig)
+					{
+						<DxFormLayoutItem Caption="重量下限" CaptionPosition="CaptionPosition.Vertical">
+							<DxSpinEdit @bind-Value="@targetBattery.MinWeight" ReadOnly="@(!editable)"></DxSpinEdit>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem Caption="重量上限" CaptionPosition="CaptionPosition.Vertical">
+							<DxSpinEdit @bind-Value="@targetBattery.MaxWeight" ReadOnly="@(!editable)"></DxSpinEdit>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem Caption="片數" CaptionPosition="CaptionPosition.Vertical">
+							<DxSpinEdit @bind-Value="@targetBattery.LimitedPieces" ReadOnly="@(!editable)"></DxSpinEdit>
+						</DxFormLayoutItem>
+					}
+				</DxFormLayout>
+
+			</Template>
+		</DxGridLayoutItem>
+		<DxGridLayoutItem Row="0" Column="1" RowSpan="2">
+			<Template>
+				<DxFormLayout CssClass="m-2 p-3 rounded border">
+					@if (hasBatteryRecipe)
+					{
+						@foreach (BatteryRecipe batteryRecipe in batteryRecipes)
+						{
+							<DxFormLayoutItem Caption="@batteryRecipe.RecipeIndex.ToString()" ColSpanLg="2">
+								<DxComboBox Data="@batteryMaterials" @bind-Value="@batteryRecipe.Type" ReadOnly="@(!editable)">
+								</DxComboBox>
+							</DxFormLayoutItem>
+						}
+					}
+				</DxFormLayout>
+			</Template>
+		</DxGridLayoutItem>
+	</Items>
+</DxGridLayout>
+@code {
+	private bool editable = false;
+
+	private IEnumerable<string> batteryMaterials;
+
+	private IEnumerable<BatteryConfig> batteryConfigs;
+	private BatteryConfig? targetBattery;
+	private bool hasBatteryConfig => targetBattery != null;
+
+	private IEnumerable<BatteryRecipe> batteryRecipes;
+	private bool hasBatteryRecipe => batteryRecipes != null;
+
+	protected override async Task OnInitializedAsync()
+	{
+		batteryMaterials = await dataService.GetAllBatteryMaterials();
+		batteryConfigs = await dataService.GetAllBatteryConfigs();
+	}
+
+	private void StartEdit()
+	{
+		editable = true;
+	}
+
+	private void FinishEdit()
+	{
+		editable = false;
+	}
+
+	private async void BatteryConfigSelected(BatteryConfig? newBatteryConfig)
+	{
+		targetBattery = newBatteryConfig;
+		batteryRecipes = await dataService.GetAllBatteryRecipeByName(targetBattery.Type);
+	}
+
+	private void SaveRecipe()
+	{
+		FinishEdit();
+	}
+}

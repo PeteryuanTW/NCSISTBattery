@@ -1,0 +1,25 @@
+﻿@rendermode InteractiveServer
+
+<MyToast></MyToast>
+
+<div class="card w-100 p-2">
+    <div class="card-body p-2">
+        <DxMenu Title="新式電池組裝" DropDownActionMode="MenuDropDownActionMode.Click" SizeMode="SizeMode.Large" ItemsPosition="ItemPosition.End" CollapseItemsToHamburgerMenu="true" Target="_blank">
+            <Items>
+                <DxMenuItem Text="機台狀態" Position="ItemPosition.Center">
+                </DxMenuItem>
+                <DxMenuItem Text="參數" Position="ItemPosition.Center">
+                </DxMenuItem>
+                <DxMenuItem Text="試算" Position="ItemPosition.Center" >
+                    <Items>
+                        <DxMenuItem Text="產生亂數" NavigateUrl="/Simulation" />
+                        <DxMenuItem Text="動畫" NavigateUrl="/SimulationAnimation" />
+                    </Items>
+                </DxMenuItem>
+            </Items>
+        </DxMenu>
+    </div>
+</div>
+@code {
+
+}

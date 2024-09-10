@@ -1,0 +1,28 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+
+
+<div class="page">
+    <DxGridLayout CssClass="page-layout">
+        <Rows>
+            <DxGridLayoutRow Areas="header" Height="auto"></DxGridLayoutRow>
+            <DxGridLayoutRow Areas="content"></DxGridLayoutRow>
+        </Rows>
+        <Columns>
+            <DxGridLayoutColumn Width="100%" />
+        </Columns>
+        <Items>
+            <DxGridLayoutItem Area="header" CssClass="layout-sidebar">
+                <Template>
+                    <Header></Header>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Area="content" CssClass="content px-4">
+                <Template>
+                    @Body
+                </Template>
+            </DxGridLayoutItem>
+        </Items>
+    </DxGridLayout>
+</div>

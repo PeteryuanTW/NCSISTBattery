@@ -1,0 +1,39 @@
+﻿@inject IToastNotificationService toastService
+@inject MyToastService myToastService
+<DxToastProvider VerticalAlignment="VerticalEdge.Bottom" ThemeMode="ToastThemeMode.Pastel" />
+
+
+@code {
+	protected override Task OnInitializedAsync()
+	{
+		myToastService.ShowSuccessAct += ReceiveSuccessToast;
+		myToastService.ShowWarningAct += ReceiveWarningToast;
+		myToastService.ShowDangerAct += ReceiveDangerToast;
+		return base.OnInitializedAsync();
+	}
+
+	private void ReceiveSuccessToast(string content)
+	{
+		toastService.ShowToast(new ToastOptions
+		{
+			RenderStyle = ToastRenderStyle.Success,
+			Text = content,
+		});
+	}
+	private void ReceiveWarningToast(string content)
+	{
+		toastService.ShowToast(new ToastOptions
+			{
+				RenderStyle = ToastRenderStyle.Warning,
+				Text = content,
+			});
+	}
+	private void ReceiveDangerToast(string content)
+	{
+		toastService.ShowToast(new ToastOptions
+			{
+				RenderStyle = ToastRenderStyle.Danger,
+				Text = content,
+			});
+	}
+}

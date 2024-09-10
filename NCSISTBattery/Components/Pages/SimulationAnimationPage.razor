@@ -1,0 +1,247 @@
+﻿@page "/SimulationAnimation"
+@rendermode InteractiveServer
+
+@inject SimulationService simulationService
+@inject MyToastService myToastService
+
+
+
+<DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
+	<Rows>
+		<DxGridLayoutRow Height="3fr"></DxGridLayoutRow>
+		<DxGridLayoutRow Height="3fr"></DxGridLayoutRow>
+		<DxGridLayoutRow Height="3fr"></DxGridLayoutRow>
+		<DxGridLayoutRow Height="3fr"></DxGridLayoutRow>
+	</Rows>
+	<Columns>
+		<DxGridLayoutColumn Width="3fr"></DxGridLayoutColumn>
+		<DxGridLayoutColumn Width="3fr"></DxGridLayoutColumn>
+		<DxGridLayoutColumn Width="3fr"></DxGridLayoutColumn>
+		<DxGridLayoutColumn Width="3fr"></DxGridLayoutColumn>
+	</Columns>
+	<Items>
+		<DxGridLayoutItem Row="0" Column="0" RowSpan="2">
+			<Template>
+				<div class="p-2">
+					<DxFormLayout>
+						<DxFormLayoutItem Caption="試算回合數">
+							<DxSpinEdit @bind-Value="@round"></DxSpinEdit>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem Caption="組裝工位數量">
+							<DxSpinEdit @bind-Value="@onStationAmount" MinValue="1"></DxSpinEdit>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem BeginRow="true">
+							<DxButton Text="模擬試算" Click="StartSimulation" Enabled="@simulationEnable"></DxButton>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem>
+							<DxProgressBar MaxValue="@round" Value="@currentRound" Type="ProgressBarType.Circular"></DxProgressBar>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem BeginRow="true" Caption="延後時間">
+							<DxSpinEdit @bind-Value="@delayMillsce" MinValue="100" ReadOnly="@runningCommand"></DxSpinEdit>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem BeginRow="true">
+							<DxButton Text="開始" Click="RunAnimation" Enabled="@runCommandEnable"></DxButton>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem>
+							<DxProgressBar MaxValue="@commandCount" Value="@commandFinishedCount"></DxProgressBar>
+						</DxFormLayoutItem>
+						<DxFormLayoutItem BeginRow="true" Caption="暫停">
+							<DxCheckBox @bind-Checked="@pause"></DxCheckBox>
+						</DxFormLayoutItem>
+					</DxFormLayout>
+				</div>
+			</Template>
+		</DxGridLayoutItem>
+		<DxGridLayoutItem Row="2" Column="0" RowSpan="2">
+			<Template>
+				<div class="p-2">
+					<DxGrid Data="@allocationCommands">
+						<Columns>
+							<DxGridDataColumn Caption="已執行" FieldName="@nameof(AllocationCommand.Processed)" />
+							<DxGridDataColumn Caption="指令類型" FieldName="@nameof(AllocationCommand.CommandType)" />
+							<DxGridDataColumn Caption="參數1" FieldName="@nameof(AllocationCommand.Param_1)" />
+							<DxGridDataColumn Caption="參數2" FieldName="@nameof(AllocationCommand.Param_2)" />
+						</Columns>
+					</DxGrid>
+				</div>
+			</Template>
+		</DxGridLayoutItem>
+		<DxGridLayoutItem Row="0" Column="1" RowSpan="2" ColumnSpan="3">
+			<Template>
+				<div class="p-2">
+					<DxGrid Data="@jigs">
+						<Columns>
+							<DxGridDataColumn Caption="治具名稱" FieldName="@nameof(Jig.Name)" />
+							<DxGridDataColumn Caption="材料種類" FieldName="@nameof(Jig.Type)" />
+							<DxGridDataColumn Caption="當前片數" FieldName="@nameof(Jig.currentCount)" />
+						</Columns>
+					</DxGrid>
+				</div>
+			</Template>
+		</DxGridLayoutItem>
+		<DxGridLayoutItem Row="2" Column="1" RowSpan="2" ColumnSpan="3">
+			<Template>
+				<div class="p-2">
+					<DxGrid Data="@batteryDetails" UnboundColumnData="UnboundColumnData">
+						<Columns>
+							<DxGridDataColumn Caption="電池成品名稱" FieldName="@nameof(BatteryDetail.Name)" />
+							<DxGridDataColumn Caption="組裝工位在席" FieldName="@nameof(BatteryDetail.OnStation)" />
+							@* <DxGridDataColumn FieldName="@nameof(BatteryDetail.heatStatus)" /> *@
+							<DxGridDataColumn FieldName="heat_status" Caption="熱量狀態" UnboundType="GridUnboundColumnType.String" />
+							@* <DxGridDataColumn FieldName="@nameof(BatteryDetail.heatPieceAmountStatus)" /> *@
+							<DxGridDataColumn FieldName="piece_status" Caption="熱片數量狀態" UnboundType="GridUnboundColumnType.String" />
+							@* <DxGridDataColumn FieldName="@nameof(BatteryDetail.batteryStatus)" /> *@
+							<DxGridDataColumn FieldName="battery_status" Caption="電池組裝狀態" UnboundType="GridUnboundColumnType.String" />
+							<DxGridDataColumn Caption="當前熱片數量" FieldName="@nameof(BatteryDetail.currentHeatPieces)" />
+							<DxGridDataColumn Caption="當前總熱量" FieldName="@nameof(BatteryDetail.currentHeat)" />
+						</Columns>
+						<DetailRowTemplate>
+							<DxGrid Data="@(((BatteryDetail)context.DataItem).HeatPiecesList)" >
+								<Columns>
+									<DxGridDataColumn Caption="治具名稱" FieldName="@nameof(HeatPiece.JigName)" />
+									<DxGridDataColumn Caption="治具內順序" FieldName="@nameof(HeatPiece.JigIndex)" />
+									<DxGridDataColumn Caption="熱片重量" FieldName="@nameof(HeatPiece.Weight)" />
+									<DxGridDataColumn Caption="卡/克" FieldName="@nameof(HeatPiece.HeatPerGram)" />
+									<DxGridDataColumn Caption="熱片總熱量" FieldName="@nameof(HeatPiece.TotalHeat)" />
+								</Columns>
+							</DxGrid>
+						</DetailRowTemplate>
+					</DxGrid>
+				</div>
+			</Template>
+		</DxGridLayoutItem>
+	</Items>
+</DxGridLayout>
+
+@code {
+
+
+
+	private int round;
+	private int currentRound;
+
+	private List<BatteryRecipe> batteryRecipes = new();
+	private List<Jig> jigs = new();
+	private List<BatteryDetail> batteryDetails = new();
+
+	private List<AllocationCommand> allocationCommands = new();
+	private int commandCount =>allocationCommands.Count();
+	private int commandFinishedCount => allocationCommands.Count(x=>x.Processed == true);
+
+	private bool pause;
+
+	private bool runningSimulation = false;
+	private bool simulationEnable => !runningSimulation && batteryRecipes.Count() > 0 && jigs.Count > 0 && batteryDetails.Count > 0;
+
+	private bool runningCommand = false;
+	private bool runCommandEnable => simulationEnable && allocationCommands.Count > 0 && !runningCommand;
+	private int delayMillsce = 500;
+
+	private int onStationAmount = 2;
+
+	protected override Task OnInitializedAsync()
+	{
+		InitParameter();
+		simulationService.SimulationRoundChangedAct += SimulationRoundChabged;
+		return base.OnInitializedAsync();
+	}
+
+	private void InitParameter()
+	{
+		batteryRecipes = simulationService.BatteryRecipes.Select(x => x).ToList();
+		jigs = simulationService.Jigs.Select(x => x.Clone()).ToList();
+		batteryDetails = simulationService.BatteryDetails.Select(x => x.Clone()).ToList();
+	}
+
+
+	private async Task StartSimulation()
+	{
+
+		runningSimulation = true;
+		await Task.Delay(1000);
+		allocationCommands = await simulationService.GAHeatPieceAllocattion(onStationAmount, round);
+		if (allocationCommands.Count() > 0)
+		{
+			myToastService.ShowSuccess("solution found");
+		}
+		else
+		{
+			myToastService.ShowWarning("solution not found");
+		}
+		runningSimulation = false; 
+	}
+
+	private void SimulationRoundChabged(int r)
+	{
+		currentRound = r;
+		InvokeAsync(StateHasChanged);
+	}
+
+	private async Task RunAnimation()
+	{
+		runningCommand = true;
+		foreach (var cmd in allocationCommands)
+		{
+			while (pause)
+			{
+				await Task.Delay(delayMillsce);
+			}
+			bool res = simulationService.RunAllocationCommand(true, cmd, jigs, batteryDetails);
+			await InvokeAsync(StateHasChanged);
+			await Task.Delay(delayMillsce);
+		}
+		runningCommand = false;
+	}
+
+	private void UnboundColumnData(GridUnboundColumnDataEventArgs e)
+	{
+		if (e.FieldName == "heat_status")
+		{
+			HeatStatus heatStatus = (HeatStatus)(e.GetRowValue("heatStatus"));
+			if (heatStatus == HeatStatus.TooLow)
+			{
+				e.Value = "過低";
+			}
+			else if (heatStatus == HeatStatus.Appropriate)
+			{
+				e.Value = "適中";
+			}
+			else if (heatStatus == HeatStatus.TooHigh)
+			{
+				e.Value = "過高";
+			}
+		}
+		else if (e.FieldName == "piece_status")
+		{
+			HeatPieceAmountStatus pieceStatus = (HeatPieceAmountStatus)(e.GetRowValue("heatPieceAmountStatus"));
+			if (pieceStatus == HeatPieceAmountStatus.TooLow)
+			{
+				e.Value = "過低";
+			}
+			else if (pieceStatus == HeatPieceAmountStatus.Appropriate)
+			{
+				e.Value = "適中";
+			}
+			else if (pieceStatus == HeatPieceAmountStatus.TooHigh)
+			{
+				e.Value = "過高";
+			}
+		}
+		else if (e.FieldName == "battery_status")
+		{
+			BatteryStatus batteryStatus = (BatteryStatus)(e.GetRowValue("batteryStatus"));
+			if (batteryStatus == BatteryStatus.NotFail)
+			{
+				e.Value = "未失敗";
+			}
+			else if (batteryStatus == BatteryStatus.Success)
+			{
+				e.Value = "成功";
+			}
+			else if (batteryStatus == BatteryStatus.Fail)
+			{
+				e.Value = "失敗";
+			}
+		}
+	}
+}
