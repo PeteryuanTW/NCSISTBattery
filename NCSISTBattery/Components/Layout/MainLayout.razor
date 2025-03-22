@@ -1,0 +1,49 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+<div class="page">
+    <DxGridLayout CssClass="page-layout">
+        <Rows>
+            <DxGridLayoutRow Areas="header" Height="auto"></DxGridLayoutRow>
+            <DxGridLayoutRow Areas="content"></DxGridLayoutRow>
+        </Rows>
+        <Columns>
+            <DxGridLayoutColumn Width="100%" />
+        </Columns>
+        <Items>
+            <DxGridLayoutItem Area="header" CssClass="layout-sidebar">
+                <Template>
+                    <Header></Header>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Area="content" CssClass="content px-4">
+                <Template>
+                    @Body
+                </Template>
+            </DxGridLayoutItem>
+        </Items>
+    </DxGridLayout>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = UrlGenerator.ToggleSidebarName)]
+    public bool ToggledSidebar { get; set; }
+
+    private RenderFragment drawerHeader => @<div class="navigation-drawer-header">
+        <img class="logo" src="images/logo.svg" alt="DevExpress logo" />
+        <NavLink href="@UrlGenerator.GetUrl(new Uri(NavigationManager.Uri).LocalPath, !ToggledSidebar)">
+            <DxButton RenderStyle="@ButtonRenderStyle.Dark" RenderStyleMode="@ButtonRenderStyleMode.Text" CssClass="menu-button-nav" IconCssClass="@(ToggledSidebar ? "icon icon-close" : "icon icon-menu")"></DxButton>
+        </NavLink>
+    </div>;
+
+    private RenderFragment drawerFooter => @<div>
+        <NavLink href="https://docs.devexpress.com/Blazor/400725/blazor-components" class="button-link">
+            <DxButton Text="Docs" RenderStyleMode="@ButtonRenderStyleMode.Text" CssClass="footer-button" RenderStyle="@ButtonRenderStyle.Light" IconCssClass="icon docs-icon"></DxButton>
+        </NavLink>
+        <NavLink href="https://demos.devexpress.com/blazor/" class="button-link">
+            <DxButton Text="Demos" RenderStyleMode="@ButtonRenderStyleMode.Text" CssClass="footer-button" RenderStyle="@ButtonRenderStyle.Light" IconCssClass="icon demos-icon"></DxButton>
+        </NavLink>
+    </div>;
+
+ 
+}

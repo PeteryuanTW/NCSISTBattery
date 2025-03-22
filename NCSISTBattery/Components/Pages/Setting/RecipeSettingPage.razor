@@ -1,0 +1,90 @@
+﻿@page "/RecipeSetting"
+@rendermode InteractiveServer
+@using NCSISTBattery.Services
+
+<DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
+    <Rows>
+        <DxGridLayoutRow></DxGridLayoutRow>
+    </Rows>
+    <Columns>
+        <DxGridLayoutColumn Width="3fr"></DxGridLayoutColumn>
+        <DxGridLayoutColumn Width="8fr"></DxGridLayoutColumn>
+    </Columns>
+    <Items>
+        <DxGridLayoutItem Row="0" Column="0">
+            <Template>
+                <div>
+                    <DxGrid>
+                        <ToolbarTemplate>
+                            <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                                <Items>
+                                    <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-pencil" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-trash" Alignment="ToolbarItemAlignment.Right" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
+                                </Items>
+                            </DxToolbar>
+                        </ToolbarTemplate>
+                        <Columns>
+                            <DxGridDataColumn FieldName="@nameof(Recipe.Name)"></DxGridDataColumn>
+                        </Columns>
+                    </DxGrid>
+                </div>
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="0" Column="1">
+            <Template>
+                <div>
+                    <DxGrid Data="@recipeContents" AllowDragRows="true" AllowedDropTarget="GridAllowedDropTarget.Internal" ItemsDropped="RecipeContentDropped">
+                        <ToolbarTemplate>
+                            <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                                <Items>
+                                    <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-pencil" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-trash" Alignment="ToolbarItemAlignment.Right" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
+                                </Items>
+                            </DxToolbar>
+                        </ToolbarTemplate>
+                        <Columns>
+                            <DxGridDataColumn FieldName="@nameof(RecipeContent.MaterialId)"></DxGridDataColumn>
+                            <DxGridDataColumn FieldName="@nameof(RecipeContent.Sequence)"></DxGridDataColumn>
+                        </Columns>
+                    </DxGrid>
+                </div>
+            </Template>
+        </DxGridLayoutItem>
+    </Items>
+</DxGridLayout>
+
+
+
+@code {
+    private List<RecipeContent> recipeContents = new();
+
+    protected override Task OnInitializedAsync()
+    {
+        recipeContents = new List<RecipeContent>
+        {
+            new RecipeContent{Sequence = 0 },
+            new RecipeContent{Sequence = 1 },
+            new RecipeContent{Sequence = 2 },
+        };
+        return base.OnInitializedAsync();
+    }
+
+    private async Task RecipeContentDropped(GridItemsDroppedEventArgs evt)
+    {
+        var droppedItem = (RecipeContent)evt.DroppedItems[0];
+        recipeContents.Remove(droppedItem);
+        var index = await evt.GetTargetDataSourceIndexAsync();
+        recipeContents.Insert(index, droppedItem);
+        ResetSequence();
+    }
+
+    private void ResetSequence()
+    {
+        foreach (var recipeContent in recipeContents)
+        {
+            recipeContent.Sequence = recipeContents.IndexOf(recipeContent);
+        }
+    }
+}

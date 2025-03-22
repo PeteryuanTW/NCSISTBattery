@@ -1,0 +1,21 @@
+﻿@page "/MaterialSetting"
+@rendermode InteractiveServer
+@using NCSISTBattery.Services
+<DxGrid>
+    <ToolbarTemplate>
+        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+            <Items>
+                <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true" />
+                <DxToolbarItem IconCssClass="oi oi-pencil"  RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                <DxToolbarItem IconCssClass="oi oi-trash" Alignment="ToolbarItemAlignment.Right" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
+            </Items>
+        </DxToolbar>
+    </ToolbarTemplate>
+    <Columns>
+        <DxGridDataColumn FieldName="@nameof(Material.Name)"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="@nameof(Material.Type)"></DxGridDataColumn>
+    </Columns>
+</DxGrid>
+@code {
+
+}

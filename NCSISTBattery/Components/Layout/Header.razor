@@ -1,0 +1,35 @@
+﻿@rendermode InteractiveServer
+
+<div class="card p-2 " style="margin:1rem">
+    <DxMenu Orientation="Orientation.Horizontal"
+    DropDownActionMode="MenuDropDownActionMode.Click"
+    DisplayMode="MenuDisplayMode.Desktop"
+    CollapseItemsToHamburgerMenu="true"
+    CollapseItemToIconMode="MenuCollapseItemToIconMode.All">
+        <Items>
+            <DxMenuItem Text="排片狀態" IconCssClass="oi oi-menu" Position="ItemPosition.Center" />
+            <DxMenuItem Text="工站" IconCssClass="oi oi-laptop" Position="ItemPosition.Center">
+                <Items>
+                    <DxMenuItem IconCssClass="oi oi-cog" Text="設定" />
+                    <DxMenuItem Text="運作狀態" IconCssClass="oi oi-dashboard" />
+                </Items>
+            </DxMenuItem>
+            <DxMenuItem Text="製程參數" IconCssClass="oi oi-info" Position="ItemPosition.Center">
+                <Items>
+                    <DxMenuItem Text="熱片種類" IconCssClass="oi oi-contrast" NavigateUrl="/MaterialSetting" />
+                    <DxMenuItem Text="配方編輯" IconCssClass="oi oi-list" NavigateUrl="/RecipeSetting" />
+                </Items>
+            </DxMenuItem>
+            <DxMenuItem Text="連線" IconCssClass="oi oi-rss" Position="ItemPosition.Center">
+                <Items>
+                    <DxMenuItem IconCssClass="oi oi-monitor" Text="機台" />
+                    <DxMenuItem IconCssClass="oi oi-tags" Text="訊號" />
+                </Items>
+            </DxMenuItem>
+        </Items>
+    </DxMenu>
+</div>
+
+@code {
+
+}
