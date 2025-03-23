@@ -1,13 +1,14 @@
 ﻿@page "/MaterialSetting"
 @rendermode InteractiveServer
-@using NCSISTBattery.Services
-<DxGrid>
+@inject DataService dataService
+
+<DxGrid @ref="@grid" Data="@materials" FocusedRowEnabled="true" FocusedRowChanged="MaterialSelected" DataItemDeleting="DeleteMaterial" HighlightRowOnHover="true">
     <ToolbarTemplate>
         <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
             <Items>
-                <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true" />
-                <DxToolbarItem IconCssClass="oi oi-pencil"  RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
-                <DxToolbarItem IconCssClass="oi oi-trash" Alignment="ToolbarItemAlignment.Right" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
+                <DxToolbarItem IconCssClass="oi oi-plus" Click="NewMaterialClicked" BeginGroup="true" />
+                <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="materialSelected" Click="ShowPopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                <DxToolbarItem IconCssClass="oi oi-trash" Enabled="materialSelected" Click="ShowDelete" Alignment="ToolbarItemAlignment.Right" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
             </Items>
         </DxToolbar>
     </ToolbarTemplate>
@@ -16,6 +17,93 @@
         <DxGridDataColumn FieldName="@nameof(Material.Type)"></DxGridDataColumn>
     </Columns>
 </DxGrid>
-@code {
 
+<DxPopup @bind-Visible="@popupVisible" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <HeaderTemplate>
+        <div class="w-100 p-3 border border-bottom">
+            <DxToolbar>
+                <Items>
+                    <DxToolbarItem IconCssClass="oi oi-x" Click="ClosePopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                </Items>
+            </DxToolbar>
+        </div>
+    </HeaderTemplate>
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@taregtMaterial" Context="EditFormContext" OnValidSubmit="UpsertMaterial">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="名稱" ColSpanLg="6" BeginRow="true">
+                    <DxTextBox @bind-Text="@taregtMaterial.Name" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="類型" ColSpanLg="6">
+                    <DxTextBox @bind-Text="@taregtMaterial.Type" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
+@code {
+    IGrid? grid { get; set; }
+    private IEnumerable<Material> materials;
+    private Material? taregtMaterial;
+    private bool materialSelected => taregtMaterial is not null;
+    private bool popupVisible;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitParam();
+    }
+    private async Task InitParam()
+    {
+        materials = await dataService.GetAllMaterials();
+    }
+
+    private void MaterialSelected(GridFocusedRowChangedEventArgs args)
+    {
+        taregtMaterial = args.DataItem as Material;
+    }
+
+    private void ShowPopup()
+    {
+        popupVisible = true;
+    }
+
+    private void NewMaterialClicked()
+    {
+        taregtMaterial = new();
+        ShowPopup();
+    }
+
+    private async Task ClosePopup()
+    {
+        popupVisible = false;
+        await InitParam();
+    }
+
+    private async Task UpsertMaterial()
+    {
+        await dataService.UpsertMaterial(taregtMaterial);
+        await ClosePopup();
+    }
+
+    private void ShowDelete()
+    {
+        grid.ShowDataItemDeleteConfirmation(taregtMaterial);
+    }
+
+    private async Task DeleteMaterial()
+    {
+        await dataService.DeleteMaterial(taregtMaterial);
+        await InitParam();
+    }
 }

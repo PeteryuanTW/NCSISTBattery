@@ -1,5 +1,7 @@
 using NCSISTBattery.Services;
 using NCSISTBattery.Components;
+using Microsoft.EntityFrameworkCore;
+using NCSISTBattery.EFModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +14,12 @@ builder.Services.AddDevExpressBlazor(options => {
     options.SizeMode = DevExpress.Blazor.SizeMode.Large;
 });
 builder.Services.AddSingleton<WeatherForecastService>();
+
+builder.Services.AddDbContextFactory<NCSISTBatteryDBContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+builder.Services.AddSingleton<DataService>();
 builder.Services.AddMvc();
 
 var app = builder.Build();

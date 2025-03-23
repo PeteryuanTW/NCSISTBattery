@@ -1,6 +1,5 @@
 ﻿@page "/RecipeSetting"
 @rendermode InteractiveServer
-@using NCSISTBattery.Services
 
 <DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
     <Rows>
@@ -14,13 +13,13 @@
         <DxGridLayoutItem Row="0" Column="0">
             <Template>
                 <div>
-                    <DxGrid>
+                    <DxGrid @ref="@recipeGrid" Data="@recipes" FocusedRowEnabled="true" FocusedRowChanged="RecipeSelected" DataItemDeleting="DeleteRecipe" HighlightRowOnHover="true">
                         <ToolbarTemplate>
                             <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
                                 <Items>
-                                    <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-pencil" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-trash" Alignment="ToolbarItemAlignment.Right" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-plus" Click="NewRecipeClick" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="@recipeSelected" Click="ShowRecipePopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-trash" Enabled="@recipeSelected" Click="ShowRecipeDelete" Alignment="ToolbarItemAlignment.Right" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
                                 </Items>
                             </DxToolbar>
                         </ToolbarTemplate>
@@ -34,18 +33,26 @@
         <DxGridLayoutItem Row="0" Column="1">
             <Template>
                 <div>
-                    <DxGrid Data="@recipeContents" AllowDragRows="true" AllowedDropTarget="GridAllowedDropTarget.Internal" ItemsDropped="RecipeContentDropped">
+                    <DxGrid @ref="@recipeContentGrid" Data="@recipeContents" FocusedRowEnabled="true" FocusedRowChanged="ContentSelected" HighlightRowOnHover="true" AllowDragRows="canReorder" AllowedDropTarget="GridAllowedDropTarget.Internal" DataItemDeleting="DeleteRecipeContent" ItemsDropped="RecipeContentDropped">
                         <ToolbarTemplate>
                             <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
                                 <Items>
-                                    <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-pencil" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-trash" Alignment="ToolbarItemAlignment.Right" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-plus" Click="NewRecipeContentClick" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="@contentSelected" Click="ShowContentPopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-justify-center" Enabled="@contentSelected" Click="SwitchReorder" RenderStyle="ButtonRenderStyle.Info" RenderStyleMode="@reorderRenderStyleMode" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-trash" Enabled="@contentSelected" Click="ShowRecipeContentDelete" Alignment="ToolbarItemAlignment.Right" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
                                 </Items>
                             </DxToolbar>
                         </ToolbarTemplate>
                         <Columns>
-                            <DxGridDataColumn FieldName="@nameof(RecipeContent.MaterialId)"></DxGridDataColumn>
+                            <DxGridDataColumn FieldName="@nameof(RecipeContent.MaterialId)">
+                                <CellDisplayTemplate>
+                                    @{
+                                        var recipeContent = context.DataItem as RecipeContent;
+                                        <DxComboBox Data="@materials" Value="@recipeContent.MaterialId" ReadOnly="true" ValueFieldName="@nameof(Material.Id)" TextFieldName="@nameof(Material.Name)" ShowValidationIcon="true" />
+                                    }
+                                </CellDisplayTemplate>
+                            </DxGridDataColumn>
                             <DxGridDataColumn FieldName="@nameof(RecipeContent.Sequence)"></DxGridDataColumn>
                         </Columns>
                     </DxGrid>
@@ -55,36 +62,205 @@
     </Items>
 </DxGridLayout>
 
+<DxPopup @bind-Visible="@recipePopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <HeaderTemplate>
+        <div class="w-100 p-3 border border-bottom">
+            <DxToolbar>
+                <Items>
+                    <DxToolbarItem IconCssClass="oi oi-x" Click="CloseRecipePopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                </Items>
+            </DxToolbar>
+        </div>
+    </HeaderTemplate>
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@targetRecipe" Context="EditFormContext" OnValidSubmit="UpsertRecipe">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="名稱" ColSpanLg="6" BeginRow="true">
+                    <DxTextBox @bind-Text="@targetRecipe.Name" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
 
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
+
+<DxPopup @bind-Visible="@contentPopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <HeaderTemplate>
+        <div class="w-100 p-3 border border-bottom">
+            <DxToolbar>
+                <Items>
+                    <DxToolbarItem IconCssClass="oi oi-x" Click="CloseContentPopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                </Items>
+            </DxToolbar>
+        </div>
+    </HeaderTemplate>
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@targetContent" Context="EditFormContext" OnValidSubmit="UpsertRecipeContent">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="原料" ColSpanLg="6" BeginRow="true">
+                    <DxComboBox Data="@materials" @bind-Value="@targetContent.MaterialId" ValueFieldName="@nameof(Material.Id)" TextFieldName="@nameof(Material.Name)" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
+
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
 
 @code {
+    IGrid? recipeGrid { get; set; }
+    IGrid? recipeContentGrid { get; set; }
+    private IEnumerable<Material> materials;
+    private IEnumerable<Recipe> recipes = new List<Recipe>();
+    private Recipe? targetRecipe;
+    private bool recipeSelected => targetRecipe is not null;
     private List<RecipeContent> recipeContents = new();
+    private RecipeContent? targetContent;
+    private bool contentSelected => targetContent is not null;
 
-    protected override Task OnInitializedAsync()
+
+    private bool recipePopup = false;
+    private bool contentPopup = false;
+    private bool canReorder = false;
+    private ToolbarItemRenderStyleMode reorderRenderStyleMode => canReorder ? ToolbarItemRenderStyleMode.Contained : ToolbarItemRenderStyleMode.Plain;
+
+    protected override async Task OnInitializedAsync()
     {
-        recipeContents = new List<RecipeContent>
-        {
-            new RecipeContent{Sequence = 0 },
-            new RecipeContent{Sequence = 1 },
-            new RecipeContent{Sequence = 2 },
-        };
-        return base.OnInitializedAsync();
+        await InitParam();
     }
 
+    private async Task InitParam()
+    {
+        recipes = await dataService.GetAllRecipes();
+        materials = await dataService.GetAllMaterials();
+    }
+
+    private void RecipeSelected(GridFocusedRowChangedEventArgs args)
+    {
+        targetRecipe = args.DataItem as Recipe;
+        recipeContents = recipeSelected ? targetRecipe.RecipeContents.ToList() : new List<RecipeContent>();
+    }
+
+    private void ContentSelected(GridFocusedRowChangedEventArgs args)
+    {
+        targetContent = args.DataItem as RecipeContent;
+    }
+
+    #region recipe
+
+    private void ShowRecipePopup() => recipePopup = true;
+
+    private async Task CloseRecipePopup()
+    {
+        await InitParam();
+        recipePopup = false;
+    }
+
+    private void NewRecipeClick()
+    {
+        targetRecipe = new();
+        ShowRecipePopup();
+    }
+
+    private async Task UpsertRecipe()
+    {
+        await dataService.UpsertRecipe(targetRecipe);
+        await CloseRecipePopup();
+    }
+
+    private void ShowRecipeDelete()
+    {
+        recipeGrid?.ShowDataItemDeleteConfirmation(targetRecipe);
+    }
+
+    private async Task DeleteRecipe()
+    {
+        await dataService.DeleteRecipe(targetRecipe);
+        await InitParam();
+    }
+
+    #endregion
+
+
+    #region recipe content
+
+    private void SwitchReorder() => canReorder = !canReorder;
+
+    private void ShowContentPopup() => contentPopup = true;
+
+    private async Task CloseContentPopup()
+    {
+        await InitParam();
+        contentPopup = false;
+    }
+
+    private void NewRecipeContentClick()
+    {
+        targetContent = new(targetRecipe);
+        ShowContentPopup();
+    }
+
+    private async Task UpsertRecipeContent()
+    {
+
+        await dataService.UpsertRecipeContent(targetContent);
+        await CloseContentPopup();
+    }
+
+    private void ShowRecipeContentDelete()
+    {
+        recipeContentGrid?.ShowDataItemDeleteConfirmation(targetContent);
+    }
+
+    private async Task DeleteRecipeContent()
+    {
+        await dataService.DeleteRecipeContent(targetContent);
+        await InitParam();
+    }
+
+    #endregion
+
+
+
+    #region recipe content drag drop event
     private async Task RecipeContentDropped(GridItemsDroppedEventArgs evt)
     {
         var droppedItem = (RecipeContent)evt.DroppedItems[0];
         recipeContents.Remove(droppedItem);
         var index = await evt.GetTargetDataSourceIndexAsync();
         recipeContents.Insert(index, droppedItem);
-        ResetSequence();
+        ResetSequence(recipeContents);
     }
 
-    private void ResetSequence()
+    private async Task ResetSequence(List<RecipeContent> recipeContents)
     {
-        foreach (var recipeContent in recipeContents)
+        foreach (var content in recipeContents)
         {
-            recipeContent.Sequence = recipeContents.IndexOf(recipeContent);
+            content.Sequence = recipeContents.IndexOf(content);
+
         }
+        await dataService.UpsertRecipeContent(recipeContents);
     }
+    #endregion
 }
