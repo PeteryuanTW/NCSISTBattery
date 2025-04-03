@@ -5,6 +5,8 @@ VisualStudioVersion = 17.13.35913.81
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCSISTBattery", "NCSISTBattery\NCSISTBattery.csproj", "{5141E131-A02B-41AD-96CA-C088D43D51B6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonLibraryP", "..\CommonLibraryP\CommonLibraryP\CommonLibraryP.csproj", "{40BE24DC-9A53-404A-880F-CE7784620F6A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{5141E131-A02B-41AD-96CA-C088D43D51B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5141E131-A02B-41AD-96CA-C088D43D51B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5141E131-A02B-41AD-96CA-C088D43D51B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40BE24DC-9A53-404A-880F-CE7784620F6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40BE24DC-9A53-404A-880F-CE7784620F6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40BE24DC-9A53-404A-880F-CE7784620F6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40BE24DC-9A53-404A-880F-CE7784620F6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

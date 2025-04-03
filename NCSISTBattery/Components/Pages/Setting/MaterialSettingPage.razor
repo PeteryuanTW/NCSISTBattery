@@ -2,6 +2,8 @@
 @rendermode InteractiveServer
 @inject DataService dataService
 
+<div style=""></div>
+
 <DxGrid @ref="@grid" Data="@materials" FocusedRowEnabled="true" FocusedRowChanged="MaterialSelected" DataItemDeleting="DeleteMaterial" HighlightRowOnHover="true">
     <ToolbarTemplate>
         <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
@@ -38,6 +40,12 @@
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="類型" ColSpanLg="6">
                     <DxTextBox @bind-Text="@taregtMaterial.Type" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="顏色" ColSpanLg="6">
+                    <DxComboBox Data="@heatpieceStyleWrapperClasses" @bind-Value="@taregtMaterial.StyleIndex" ValueFieldName="@nameof(HeatpieceStyleWrapperClass.Index)" TextFieldName="@nameof(HeatpieceStyleWrapperClass.DisplayName)"></DxComboBox>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="預覽" ColSpanLg="6">
+                    <DxButton Text="@(((ButtonRenderStyle)taregtMaterial.StyleIndex).ToString())" RenderStyle="@((ButtonRenderStyle)taregtMaterial.StyleIndex)" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
+                </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="12">
                     <hr />
                 </DxFormLayoutItem>
@@ -58,6 +66,7 @@
     private Material? taregtMaterial;
     private bool materialSelected => taregtMaterial is not null;
     private bool popupVisible;
+    private IEnumerable<HeatpieceStyleWrapperClass> heatpieceStyleWrapperClasses => NCSISTBatteryEnumHelper.GetHeatpieceStylesWrapperClass();
 
     protected override async Task OnInitializedAsync()
     {

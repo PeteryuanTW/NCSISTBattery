@@ -10,6 +10,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.14" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Data\" />
+    <ProjectReference Include="..\..\CommonLibraryP\CommonLibraryP\CommonLibraryP.csproj" />
   </ItemGroup>
 </Project>
