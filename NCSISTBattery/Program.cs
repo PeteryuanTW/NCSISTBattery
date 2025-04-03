@@ -19,7 +19,15 @@ builder.Services.AddDbContextFactory<NCSISTBatteryDBContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
+
 builder.Services.AddSingleton<DataService>();
+builder.Services.AddHostedService<InitService>();
+
+
+
+
+
 builder.Services.AddMvc();
 
 var app = builder.Build();

@@ -1,0 +1,19 @@
+﻿@rendermode InteractiveServer
+
+<DxGrid Data="@commands">
+    <Columns>
+        <DxGridDataColumn FieldName="@nameof(OrderCommand.StartTime)" DisplayFormat="G" />
+        <DxGridDataColumn FieldName="@nameof(OrderCommand.FinishTime)" DisplayFormat="G"/>
+    </Columns>
+</DxGrid>
+
+@code {
+    private List<OrderCommand> commands = new();
+
+    protected override Task OnInitializedAsync()
+    {
+
+        commands = dataService.GetRuntimeCommand();
+        return base.OnInitializedAsync();
+    }
+}

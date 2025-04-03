@@ -1,42 +1,221 @@
 ﻿@page "/"
-<PageTitle>Welcome</PageTitle>
+@rendermode InteractiveServer
 
-<div class="main-content">
-    <DxGridLayout CssClass="welcome-gridlayout" RowSpacing="3rem">
+<DxLoadingPanel @bind-Visible="isCalculating"
+                IsContentBlocked="true"
+                ApplyBackgroundShading="true"
+                IndicatorAreaVisible="false"
+                Text="Calculating Data...">
+    <DxGridLayout>
         <Rows>
-            <DxGridLayoutRow Height="auto" Areas="header"></DxGridLayoutRow>
-            <DxGridLayoutRow Height="auto" Areas="cards"></DxGridLayoutRow>
+            <DxGridLayoutRow Height="1fr" />
+            <DxGridLayoutRow Height="10fr" />
         </Rows>
+        <Columns>
+            <DxGridLayoutColumn Width="12fr" />
+        </Columns>
         <Items>
-            <DxGridLayoutItem Area="header" CssClass="title">
+            <DxGridLayoutItem Row="0" Column="0">
                 <Template>
-                    <div class="title-header-text">Hello World!</div>
-                    <div class="title-content-text">Welcome to your new DevExpress Blazor Application</div>
+                    <DxToolbar Title="@(dataService.CurrentRecipe?.Name)">
+                        <Items>
+                            <DxToolbarItem BeginGroup="true" IconCssClass="oi oi-random" Click="@(async () => await dataService.PushFakeHeatPieceIntiJigs())" />
+                            <DxToolbarItem BeginGroup="true" Tooltip="上傳" RenderStyle="ButtonRenderStyle.Info" IconCssClass="oi oi-cloud-upload" Id="dataimport" />
+                            <DxToolbarItem BeginGroup="true" Tooltip="切換配方" Click="@ShowRecipeSelectPopup" RenderStyle="ButtonRenderStyle.Primary" IconCssClass="oi oi-loop-circular" />
+                            <DxToolbarItem BeginGroup="true" Tooltip="模擬預算" Click="@StartCalculating" RenderStyle="ButtonRenderStyle.Warning" IconCssClass="oi oi-calculator" />
+                        </Items>
+                    </DxToolbar>
                 </Template>
             </DxGridLayoutItem>
-            <DxGridLayoutItem Area="cards" CssClass="welcome-cards">
+            <DxGridLayoutItem Row="1" Column="1">
                 <Template>
-                    <NavLink class="welcome-card" href="@UrlGenerator.GetUrl("/counter", ToggledSidebar)">
-                        <svg class="welcome-card-img" alt="counter card">
-                            <use href="images/cards.svg#counter"></use>
-                        </svg>
-                        <div class="welcome-card-text">Counter</div>
-                        <div class="welcome-card-back"></div>
-                    </NavLink>
-                    <NavLink class="welcome-card" href="@UrlGenerator.GetUrl("/weather", ToggledSidebar)">
-                        <svg class="welcome-card-img" alt="weather card">
-                            <use href="images/cards.svg#weather"></use>
-                        </svg>
-                        <div class="welcome-card-text">Weather</div>
-                        <div class="welcome-card-back"></div>
-                    </NavLink>
+                    <DxSplitter CssClass="card h-100 w-100" Orientation="Orientation.Vertical">
+                        <Panes>
+                            <DxSplitterPane Size="70%">
+                                <DxSplitter Orientation="Orientation.Horizontal">
+                                    <Panes>
+                                        <DxSplitterPane>
+                                            <DxFormLayout>
+                                                <DxFormLayoutItem ColSpanLg="12">
+                                                    <DxTabs @bind-ActiveTabIndex="@startTabOndex">
+                                                        <DxTab Text="OnBoard"></DxTab>
+                                                        <DxTab Text="Candidate"></DxTab>
+                                                    </DxTabs>
+                                                </DxFormLayoutItem>
+                                                <DxFormLayoutItem ColSpanLg="12">
+                                                    <DxCarousel>
+                                                        <Items>
+                                                            @foreach (var startJigDisplay in StartJigDisplay)
+                                                            {
+                                                                <DxCarouselItem>
+                                                                    <div class="demo-carousel-content">
+                                                                        <JigComponemt JigParameter="@startJigDisplay" />
+                                                                    </div>
+                                                                </DxCarouselItem>
+                                                            }
+                                                        </Items>
+                                                    </DxCarousel>
+                                                </DxFormLayoutItem>
+                                            </DxFormLayout>
+                                        </DxSplitterPane>
+                                        <DxSplitterPane>
+                                            <DxCarousel>
+                                                <Items>
+                                                    @foreach (var destJigs in DestJigs)
+                                                    {
+                                                        <DxCarouselItem>
+                                                            <div class="demo-carousel-content">
+                                                                <JigComponemt JigParameter="@destJigs" />
+                                                            </div>
+                                                        </DxCarouselItem>
+                                                    }
+                                                </Items>
+                                            </DxCarousel>
+                                        </DxSplitterPane>
+                                    </Panes>
+                                </DxSplitter>
+                            </DxSplitterPane>
+                            <DxSplitterPane Size="30%">
+                                <CommandComponent />
+                            </DxSplitterPane>
+                        </Panes>
+                    </DxSplitter>
                 </Template>
             </DxGridLayoutItem>
         </Items>
     </DxGridLayout>
-</div>
+</DxLoadingPanel>
+
+<DxFileInput ExternalSelectButtonCssSelector="#dataimport"
+             MaxFileSize="15000000">
+</DxFileInput>
+
+<DxPopup @bind-Visible="@recipeSelectPopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <HeaderTemplate>
+        <div class="w-100 p-3 border border-bottom">
+            <DxToolbar>
+                <Items>
+                    <DxToolbarItem IconCssClass="oi oi-x" Click="CloseRecipeSelectPopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                </Items>
+            </DxToolbar>
+        </div>
+    </HeaderTemplate>
+    <BodyContentTemplate Context="bodycontext">
+        <DxFormLayout>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="配方選擇" ColSpanLg="12" BeginRow="true">
+                <DxComboBox Data="@recipes" Value="@(dataService.CurrentRecipe)" ValueChanged="@((Recipe? r) => RecipeChanged(r))" TextFieldName="@nameof(Recipe.Name)" />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem ColSpanLg="12">
+                <hr />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                <DxToolbar>
+                    <Items>
+                        <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                    </Items>
+                </DxToolbar>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </BodyContentTemplate>
+</DxPopup>
+
+<DxPopup @bind-Visible="@calculationPopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <HeaderTemplate>
+        <div class="w-100 p-3 border border-bottom">
+            <DxToolbar>
+                <Items>
+                    <DxToolbarItem IconCssClass="oi oi-x" Click="CloseCalculationPopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                </Items>
+            </DxToolbar>
+        </div>
+    </HeaderTemplate>
+    <BodyContentTemplate Context="bodycontext">
+        <DxFormLayout>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="耗時" ColSpanLg="6" BeginRow="true">
+                <DxTextBox></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="其他數值" ColSpanLg="6" BeginRow="true">
+                <DxTextBox></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="其他數值" ColSpanLg="6" BeginRow="true">
+                <DxTextBox></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="其他數值" ColSpanLg="6" BeginRow="true">
+                <DxTextBox></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="其他數值" ColSpanLg="6" BeginRow="true">
+                <DxTextBox></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem ColSpanLg="12">
+                <hr />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                <DxToolbar>
+                    <Items>
+                        <DxToolbarItem IconCssClass="oi oi-media-play" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                    </Items>
+                </DxToolbar>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </BodyContentTemplate>
+</DxPopup>
 
 @code {
-    [SupplyParameterFromQuery(Name = UrlGenerator.ToggleSidebarName)]
-    public bool ToggledSidebar { get; set; }
+    private List<Jig> AllJigs = new();
+
+    private List<Jig> StartJigs => AllJigs.Where(x => !x.IsDestination).ToList();
+    private int startTabOndex { get; set; }
+    private List<Jig> OnboardStartJigs => StartJigs.Where(x => x.IsOnBoard).ToList();
+    private List<Jig> CandidateStartJigs => StartJigs.Where(x => !x.IsOnBoard).ToList();
+    private List<Jig> StartJigDisplay => startTabOndex switch
+    {
+        0 => OnboardStartJigs,
+        1 => CandidateStartJigs,
+        _ => new List<Jig> { },
+    };
+
+    private List<Jig> DestJigs => AllJigs.Where(x => x.IsDestination).ToList();
+
+    private bool recipeSelectPopup = false;
+    private void ShowRecipeSelectPopup() => recipeSelectPopup = true;
+    private void CloseRecipeSelectPopup() => recipeSelectPopup = false;
+
+    private bool calculationPopup = false;
+    private void ShowCalculationPopup() => calculationPopup = true;
+    private void CloseCalculationPopup() => calculationPopup = false;
+    private bool isCalculating = false;
+
+    private List<Recipe> recipes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateJigs();
+        await GetRecipe();
+        dataService.JigChangedFunc += UpdateJigs;
+        //return base.OnInitializedAsync();
+    }
+
+    private Task UpdateJigs()
+    {
+        AllJigs = dataService.Jigs;
+        return Task.CompletedTask;
+    }
+
+    private async Task GetRecipe()
+    {
+        recipes = await dataService.GetAllRecipes();
+    }
+
+    private void RecipeChanged(Recipe? recipe)
+    {
+        dataService.SetRecipe(recipe);
+    }
+
+    private async Task StartCalculating()
+    {
+        isCalculating = true;
+        await Task.Delay(5000);
+        isCalculating = false;
+        ShowCalculationPopup();
+    }
 }

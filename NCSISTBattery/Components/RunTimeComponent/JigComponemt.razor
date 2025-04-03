@@ -1,0 +1,24 @@
+﻿@rendermode InteractiveServer
+
+<DxFormLayout CssClass="w-100 h-100">
+    @if (hasJig)
+    {
+        <DxFormLayoutItem ColSpanLg="12">
+            <DxTextBox Text="@JigParameter?.Name" ReadOnly="true"/>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem ColSpanLg="12">
+            <DxGrid Data="@JigParameter?.JigContent" AllowSort="false">
+                <Columns>
+                    <DxGridDataColumn FieldName="@nameof(HeatPiece.Name)"/>
+                    <DxGridDataColumn FieldName="@nameof(HeatPiece.Heat)" />
+                </Columns>
+            </DxGrid>
+        </DxFormLayoutItem>
+    }
+</DxFormLayout>
+@code {
+    [Parameter]
+    public Jig? JigParameter { get; set; }
+
+    private bool hasJig => JigParameter is not null;
+}

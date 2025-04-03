@@ -1,6 +1,7 @@
 ﻿using DevExpress.Blazor.Popup.Internal;
 using Microsoft.EntityFrameworkCore;
 using NCSISTBattery.EFModel;
+using System;
 
 namespace NCSISTBattery.Services
 {
@@ -57,12 +58,20 @@ namespace NCSISTBattery.Services
 
         #region recipe
 
+        private Recipe? currentRecipe;
+        public Recipe? CurrentRecipe => currentRecipe;
+
+        public void SetRecipe(Recipe? recipe)
+        {
+            currentRecipe = recipe;
+        }
+
         public async Task<List<Recipe>> GetAllRecipes()
         {
             using (var scope = scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
-                return await dbContext.Recipes.Include(x=>x.RecipeContents.OrderBy(x=>x.Sequence)).AsNoTracking().ToListAsync();
+                return await dbContext.Recipes.Include(x => x.RecipeContents.OrderBy(x => x.Sequence)).AsNoTracking().ToListAsync();
             }
         }
 
@@ -138,8 +147,8 @@ namespace NCSISTBattery.Services
                     }
                     await dbContext.SaveChangesAsync();
                 }
-                
-                
+
+
             }
         }
 
@@ -204,7 +213,7 @@ namespace NCSISTBattery.Services
                 var target = await dbContext.Recipes
                     .Include(x => x.RecipeContents)
                     .AsSplitQuery()
-                    .FirstOrDefaultAsync(x=>x.Id == recipe.Id);
+                    .FirstOrDefaultAsync(x => x.Id == recipe.Id);
                 if (target is not null)
                 {
                     var newContents = target.RecipeContents;
@@ -230,6 +239,84 @@ namespace NCSISTBattery.Services
                 }
 
             }
+        }
+
+        #endregion
+
+        #region jigs
+        private List<Jig> jigs = new();
+        public List<Jig> Jigs => jigs;
+
+        public Func<Task>? JigChangedFunc;
+        private void JigChanged()
+            => JigChangedFunc?.Invoke();
+
+        public async Task InitAllJigs()
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
+                var allJigs = await dbContext.Jigs.AsNoTracking().ToListAsync();
+                foreach (var jig in allJigs)
+                {
+                    //start jig
+                    if (!jig.IsDestination)
+                    {
+                        var heatPieces = await dbContext.HeatPieces.Where(x => x.StartJigId == jig.Id && !x.IsFinished && !x.IsRecord).ToListAsync();
+                        jig.ImportHeatPiece(heatPieces);
+                    }
+                    else
+                    {
+                        var heatPieces = await dbContext.HeatPieces.Where(x => x.DestinationJigId == jig.Id && x.IsFinished && !x.IsRecord).ToListAsync();
+                        jig.ImportHeatPiece(heatPieces);
+                    }
+                }
+                jigs = allJigs;
+            }
+        }
+
+        public async Task PushFakeHeatPieceIntiJigs(int amount = 10)
+        {
+            foreach (var jig in jigs)
+            {
+                jig.ImportHeatPiece(GenerateFakeHeatPiece(amount).ToList());
+                JigChanged();
+                JigChangedFunc?.Invoke();
+                await Task.Delay(500);
+            }
+        }
+
+        private IEnumerable<HeatPiece> GenerateFakeHeatPiece(int amount = 10)
+        {
+            Random r = new();
+            float min = 1.0f;
+            float max = 10.0f;
+
+            for (int i = 0; i < amount; i++)
+            {
+
+                yield return new HeatPiece
+                {
+                    Id = Guid.NewGuid(),
+                    Name = DateTime.Now.ToString("yyyyMMddHHmmssfff"),
+                    Heat = (float)(r.NextDouble() * (max - min) + min),
+
+                };
+            }
+        }
+
+        #endregion
+
+        #region command
+        public List<OrderCommand> GetRuntimeCommand()
+        {
+            return new List<OrderCommand>
+            {
+                new OrderCommand{ StartTime = DateTime.Now, FinishTime = DateTime.Now},
+                new OrderCommand{ StartTime = DateTime.Now, FinishTime = DateTime.Now},
+                new OrderCommand{ StartTime = DateTime.Now, FinishTime = DateTime.Now},
+                new OrderCommand{ StartTime = DateTime.Now, FinishTime = DateTime.Now},
+            };
         }
 
         #endregion

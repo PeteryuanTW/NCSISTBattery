@@ -12,6 +12,8 @@ namespace NCSISTBattery.EFModel
         public virtual DbSet<Material> Materials { get; set; }
         public virtual DbSet<Recipe> Recipes { get; set; }
         public virtual DbSet<RecipeContent> RecipeContents { get; set; }
+        public virtual DbSet<Jig> Jigs { get; set; }
+        public virtual DbSet<HeatPiece> HeatPieces { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -46,6 +48,18 @@ namespace NCSISTBattery.EFModel
                 entity.HasOne(d => d.Recipe).WithMany(p => p.RecipeContents)
                     .HasForeignKey(d => d.RecipeId)
                     .OnDelete(DeleteBehavior.ClientSetNull);
+            });
+
+            modelBuilder.Entity<Jig>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            modelBuilder.Entity<HeatPiece>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Name).IsUnique();
             });
         }
     }
