@@ -2,6 +2,8 @@ using NCSISTBattery.Services;
 using NCSISTBattery.Components;
 using Microsoft.EntityFrameworkCore;
 using NCSISTBattery.EFModel;
+using CommonLibraryP.MachinePKG;
+using CommonLibraryP.ShopfloorPKG;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,10 @@ builder.Services.AddDevExpressBlazor(options => {
     options.BootstrapVersion = DevExpress.Blazor.BootstrapVersion.v5;
     options.SizeMode = DevExpress.Blazor.SizeMode.Large;
 });
+
+builder.AddMachineService();
+//builder.AddShopfloorService();
+
 builder.Services.AddSingleton<WeatherForecastService>();
 
 builder.Services.AddDbContextFactory<NCSISTBatteryDBContext>(options =>

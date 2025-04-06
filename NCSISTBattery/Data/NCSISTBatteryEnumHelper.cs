@@ -21,4 +21,19 @@ namespace NCSISTBattery.Data
             displayName = renderStyle.ToString();
         }
     }
+    public enum CommandTypeEnum
+    {
+        HorizontalMovement = 0,
+        VerticalDowmMovement = 1,
+        VerticalUpMovement = 2,
+        Suction = 3,
+        Release = 4,
+    }
+    public enum CommandStatus
+    {
+        Nnknown = -1,
+        Processing = 0,
+        InQueue = 1,
+        Finished = 2,
+    }
 }

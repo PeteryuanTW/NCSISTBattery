@@ -31,51 +31,56 @@
                 <Template>
                     <DxSplitter CssClass="card h-100 w-100" Orientation="Orientation.Vertical">
                         <Panes>
-                            <DxSplitterPane Size="70%">
+                            <DxSplitterPane Size="60%" AllowCollapse="true">
                                 <DxSplitter Orientation="Orientation.Horizontal">
                                     <Panes>
-                                        <DxSplitterPane>
-                                            <DxFormLayout>
-                                                <DxFormLayoutItem ColSpanLg="12">
-                                                    <DxTabs @bind-ActiveTabIndex="@startTabOndex">
-                                                        <DxTab Text="OnBoard"></DxTab>
-                                                        <DxTab Text="Candidate"></DxTab>
-                                                    </DxTabs>
-                                                </DxFormLayoutItem>
-                                                <DxFormLayoutItem ColSpanLg="12">
-                                                    <DxCarousel>
-                                                        <Items>
-                                                            @foreach (var startJigDisplay in StartJigDisplay)
-                                                            {
-                                                                <DxCarouselItem>
-                                                                    <div class="demo-carousel-content">
-                                                                        <JigComponemt JigParameter="@startJigDisplay" />
-                                                                    </div>
-                                                                </DxCarouselItem>
-                                                            }
-                                                        </Items>
-                                                    </DxCarousel>
-                                                </DxFormLayoutItem>
-                                            </DxFormLayout>
-                                        </DxSplitterPane>
-                                        <DxSplitterPane>
-                                            <DxCarousel>
+                                        <DxSplitterPane AllowCollapse="true">
+                                            <DxStackLayout Orientation="Orientation.Vertical">
                                                 <Items>
-                                                    @foreach (var destJigs in DestJigs)
-                                                    {
-                                                        <DxCarouselItem>
-                                                            <div class="demo-carousel-content">
-                                                                <JigComponemt JigParameter="@destJigs" />
+                                                    <DxStackLayoutItem Length="1fr">
+                                                        <Template>
+                                                            <DxTabs @bind-ActiveTabIndex="@startTabOndex">
+                                                                <DxTab Text="在製"></DxTab>
+                                                                <DxTab Text="備援"></DxTab>
+                                                            </DxTabs>
+                                                        </Template>
+                                                    </DxStackLayoutItem>
+                                                    <DxStackLayoutItem Length="10fr">
+                                                        <Template>
+                                                            <div class="h-100">
+                                                                <DxTabs CssClass="h-100" TabsPosition="TabsPosition.Bottom">
+                                                                    @foreach (var destJig in StartJigDisplay)
+                                                                    {
+                                                                        <DxTabPage Text="@destJig.Name" CssClass="h-100">
+                                                                            <div class="p-3 h-100">
+                                                                                <JigComponemt JigParameter="@destJig" />
+                                                                            </div>
+                                                                        </DxTabPage>
+                                                                    }
+                                                                </DxTabs>
                                                             </div>
-                                                        </DxCarouselItem>
-                                                    }
+                                                            
+                                                        </Template>
+                                                    </DxStackLayoutItem>
                                                 </Items>
-                                            </DxCarousel>
+                                            </DxStackLayout>
+                                        </DxSplitterPane>
+                                        <DxSplitterPane AllowCollapse="true">
+                                            <DxTabs>
+                                                @foreach (var destJig in DestJigs)
+                                                {
+                                                    <DxTabPage Text="@destJig.Name">
+                                                        <div class="demo-carousel-content">
+                                                            <JigComponemt JigParameter="@destJig" />
+                                                        </div>
+                                                    </DxTabPage>
+                                                }
+                                            </DxTabs>
                                         </DxSplitterPane>
                                     </Panes>
                                 </DxSplitter>
                             </DxSplitterPane>
-                            <DxSplitterPane Size="30%">
+                            <DxSplitterPane Size="40%" AllowCollapse="true">
                                 <CommandComponent />
                             </DxSplitterPane>
                         </Panes>

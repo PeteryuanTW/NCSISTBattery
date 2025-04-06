@@ -7,7 +7,7 @@ namespace NCSISTBattery.EFModel
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid? Id { get; set; }
+        public Guid Id { get; set; }
         [Required]
         public string Name { get; set; } = null!;
         [Required]
@@ -15,5 +15,7 @@ namespace NCSISTBattery.EFModel
         [Required]
         public int StyleIndex { get; set; }
         public virtual ICollection<RecipeContent> RecipeContents { get; set; } = null!;
+        public virtual ICollection<HeatPiece> HeatPieces { get; set; } = null!;
+        
     }
 }

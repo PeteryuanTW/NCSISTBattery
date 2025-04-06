@@ -1,19 +1,62 @@
 ﻿@rendermode InteractiveServer
 
-<DxGrid Data="@commands">
+<style>
+    .inqueue{
+        background-color: rgba(77, 255, 255, 0.3);
+    }
+
+    .processing {
+        background-color: rgba(41, 255, 41, 0.3);
+    }
+
+    .finished {
+    }
+</style>
+
+
+<DxGrid Data="@commands" CustomizeElement="CommandStatusBackgroundColor">
     <Columns>
+        <DxGridDataColumn FieldName="@nameof(OrderCommand.CommandTypeIcon)" TextAlignment="GridTextAlignment.Center">
+            <CellDisplayTemplate>
+                @if (context.DataItem is OrderCommand orderCommand)
+                {
+                    <DxButton Text="@((Enum.GetName(typeof(CommandTypeEnum), orderCommand.CommandType)).ToString())" IconCssClass="@($"oi oi-{orderCommand.CommandTypeIcon}")" Enabled="false" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Outline"/>
+                }
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+        <DxGridDataColumn FieldName="@nameof(OrderCommand.CommandStatus)" />
         <DxGridDataColumn FieldName="@nameof(OrderCommand.StartTime)" DisplayFormat="G" />
-        <DxGridDataColumn FieldName="@nameof(OrderCommand.FinishTime)" DisplayFormat="G"/>
+        <DxGridDataColumn FieldName="@nameof(OrderCommand.FinishTime)" DisplayFormat="G" />
     </Columns>
 </DxGrid>
 
 @code {
     private List<OrderCommand> commands = new();
 
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
+        commands = await dataService.GetRuntimeCommand();
+    }
 
-        commands = dataService.GetRuntimeCommand();
-        return base.OnInitializedAsync();
+    private void CommandStatusBackgroundColor(GridCustomizeElementEventArgs e)
+    {
+        if (e.ElementType == GridElementType.DataRow)
+        {
+            if (Enum.IsDefined(typeof(CommandStatus), e.Grid.GetRowValue(e.VisibleIndex, "CommandStatus")))
+            {
+                var status = (CommandStatus)(e.Grid.GetRowValue(e.VisibleIndex, "CommandStatus"));
+                switch (status)
+                {
+                    case CommandStatus.Processing:
+                        e.CssClass = "processing";
+                        break;
+                    case CommandStatus.InQueue:
+                        e.CssClass = "inqueue";
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
     }
 }

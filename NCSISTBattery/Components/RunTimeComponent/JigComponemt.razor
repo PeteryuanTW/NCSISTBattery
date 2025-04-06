@@ -1,24 +1,33 @@
 ﻿@rendermode InteractiveServer
 
-<DxFormLayout CssClass="w-100 h-100">
-    @if (hasJig)
-    {
-        <DxFormLayoutItem ColSpanLg="12">
-            <DxTextBox Text="@JigParameter?.Name" ReadOnly="true"/>
-        </DxFormLayoutItem>
-        <DxFormLayoutItem ColSpanLg="12">
-            <DxGrid Data="@JigParameter?.JigContent" AllowSort="false">
-                <Columns>
-                    <DxGridDataColumn FieldName="@nameof(HeatPiece.Name)"/>
-                    <DxGridDataColumn FieldName="@nameof(HeatPiece.Heat)" />
-                </Columns>
-            </DxGrid>
-        </DxFormLayoutItem>
-    }
-</DxFormLayout>
+
+@if (hasJig)
+{
+    <DxListBox TData="HeatPiece" TValue="HeatPiece" Data="@totalHeatPieces" ReadOnly="true">
+        <ItemDisplayTemplate>
+            <div>
+                <DxButton Text="@($"{context.DataItem.Name}({context.DataItem.Heat})")" Enabled="false" RenderStyle="@((ButtonRenderStyle)context.DataItem.Material.StyleIndex)" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
+            </div>
+        </ItemDisplayTemplate>
+    </DxListBox>
+}
 @code {
     [Parameter]
     public Jig? JigParameter { get; set; }
 
     private bool hasJig => JigParameter is not null;
+
+    private List<HeatPiece> totalHeatPieces => hasJig ? JigParameter.JigContent : new();
+    private List<HeatPiece> displayHeatPieces => hasJig ? totalHeatPieces.Skip(ActivePageIndex).Take(pageSize).ToList() : new();
+    private HeatPiece? heatPiece;
+
+    private int pageSize = 10;
+    private int totalPage => (int)Math.Ceiling((float)totalHeatPieces.Count / pageSize);
+
+    private int ActivePageIndex { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
 }

@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using NCSISTBattery.EFModel;
 using System;
 
+
+
 namespace NCSISTBattery.Services
 {
     public class DataService
@@ -52,6 +54,24 @@ namespace NCSISTBattery.Services
                     dbContext.Remove(target);
                     await dbContext.SaveChangesAsync();
                 }
+            }
+        }
+
+        private async Task<Material?> GetRandomMaterial()
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
+                var allMaterials = await dbContext.Materials.ToListAsync();
+                var materialCount = allMaterials.Count;
+                if (materialCount is 0)
+                {
+                    return null;
+                }
+                Random random = new Random();
+                int index = random.Next(materialCount);
+                var material = allMaterials[index];
+                return material;
             }
         }
         #endregion
@@ -275,48 +295,59 @@ namespace NCSISTBattery.Services
             }
         }
 
-        public async Task PushFakeHeatPieceIntiJigs(int amount = 10)
+        public async Task PushFakeHeatPieceIntiJigs(int amount = 50)
         {
             foreach (var jig in jigs)
             {
-                jig.ImportHeatPiece(GenerateFakeHeatPiece(amount).ToList());
+                var heatpieces = await GenerateFakeHeatPiece(amount);
+                jig.ImportHeatPiece(heatpieces);
                 JigChanged();
                 JigChangedFunc?.Invoke();
                 await Task.Delay(500);
             }
         }
 
-        private IEnumerable<HeatPiece> GenerateFakeHeatPiece(int amount = 10)
+        private async Task<List<HeatPiece>> GenerateFakeHeatPiece(int amount = 10)
         {
             Random r = new();
             float min = 1.0f;
             float max = 10.0f;
 
+            var res = new List<HeatPiece>();
+
             for (int i = 0; i < amount; i++)
             {
-
-                yield return new HeatPiece
+                var m = await GetRandomMaterial();
+                if (m is not null)
                 {
-                    Id = Guid.NewGuid(),
-                    Name = DateTime.Now.ToString("yyyyMMddHHmmssfff"),
-                    Heat = (float)(r.NextDouble() * (max - min) + min),
+                    var tmp = new HeatPiece
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = DateTime.Now.ToString("yyyyMMddHHmmssfff"),
+                        Heat = (float)Math.Round(r.NextDouble() * (max - min) + min, 2),
 
-                };
+                        MaterialId = m.Id,
+                        Material = m,
+                    };
+                    res.Add(tmp);
+                }
+
             }
+
+            return res;
         }
 
         #endregion
 
         #region command
-        public List<OrderCommand> GetRuntimeCommand()
+        public async Task<List<OrderCommand>> GetRuntimeCommand()
         {
-            return new List<OrderCommand>
+            using (var scope = scopeFactory.CreateScope())
             {
-                new OrderCommand{ StartTime = DateTime.Now, FinishTime = DateTime.Now},
-                new OrderCommand{ StartTime = DateTime.Now, FinishTime = DateTime.Now},
-                new OrderCommand{ StartTime = DateTime.Now, FinishTime = DateTime.Now},
-                new OrderCommand{ StartTime = DateTime.Now, FinishTime = DateTime.Now},
-            };
+                var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
+                var cmds = await dbContext.OrderCommands.AsNoTracking().ToListAsync();
+                return cmds.OrderBy(x => x.CommandStatus).ToList();
+            }
         }
 
         #endregion

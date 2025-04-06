@@ -44,7 +44,7 @@
                     <DxComboBox Data="@heatpieceStyleWrapperClasses" @bind-Value="@taregtMaterial.StyleIndex" ValueFieldName="@nameof(HeatpieceStyleWrapperClass.Index)" TextFieldName="@nameof(HeatpieceStyleWrapperClass.DisplayName)"></DxComboBox>
                 </DxFormLayoutItem>
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="預覽" ColSpanLg="6">
-                    <DxButton Text="@(((ButtonRenderStyle)taregtMaterial.StyleIndex).ToString())" RenderStyle="@((ButtonRenderStyle)taregtMaterial.StyleIndex)" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
+                    <DxButton Text="@($"{taregtMaterial?.Name}({taregtMaterial?.Type})")" RenderStyle="@((ButtonRenderStyle)taregtMaterial.StyleIndex)" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
                 </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="12">
                     <hr />

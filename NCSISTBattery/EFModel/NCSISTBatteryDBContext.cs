@@ -14,6 +14,7 @@ namespace NCSISTBattery.EFModel
         public virtual DbSet<RecipeContent> RecipeContents { get; set; }
         public virtual DbSet<Jig> Jigs { get; set; }
         public virtual DbSet<HeatPiece> HeatPieces { get; set; }
+        public virtual DbSet<OrderCommand> OrderCommands { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -60,6 +61,13 @@ namespace NCSISTBattery.EFModel
             {
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.Name).IsUnique();
+
+                entity.HasOne(e => e.Material).WithMany(p => p.HeatPieces).HasForeignKey(x => x.MaterialId);
+            });
+
+            modelBuilder.Entity<OrderCommand>(entity =>
+            {
+                entity.HasKey(e => e.Id);
             });
         }
     }
