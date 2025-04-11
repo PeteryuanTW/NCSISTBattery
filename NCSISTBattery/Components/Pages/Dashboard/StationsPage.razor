@@ -1,0 +1,23 @@
+﻿@page "/StationsPage"
+@rendermode InteractiveServer
+
+@inject ShopfloorService shopfloorService
+
+
+<div class="border border-primary p-3 w-100 h-100 d-flex flex-wrap justify-content-center align-items-center gap-1 overflow-y-auto">
+    @foreach (var s in Stations)
+    {
+        <StationUIComponent StationParam="@s"/>
+    }
+</div>
+
+
+@code {
+    private List<Station> Stations = new();
+
+    protected override Task OnInitializedAsync()
+    {
+        Stations = shopfloorService.Stations;
+        return base.OnInitializedAsync();
+    }
+}

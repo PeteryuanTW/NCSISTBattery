@@ -11,7 +11,13 @@
             <DxMenuItem Text="工站" IconCssClass="oi oi-laptop" Position="ItemPosition.Center">
                 <Items>
                     <DxMenuItem IconCssClass="oi oi-cog" Text="設定" NavigateUrl="/ProcessSetting" />
-                    <DxMenuItem Text="運作狀態" IconCssClass="oi oi-dashboard" />
+                    <DxMenuItem Text="運作狀態" NavigateUrl="/StationsPage" IconCssClass="oi oi-dashboard" />
+                </Items>
+            </DxMenuItem>
+            <DxMenuItem Text="地圖" IconCssClass="oi oi-map" Position="ItemPosition.Center">
+                <Items>
+                    <DxMenuItem IconCssClass="oi oi-map-marker" Text="編輯" NavigateUrl="/MapSettingPage" />
+                    <DxMenuItem Text="動態儀錶板" NavigateUrl="/" IconCssClass="oi oi-dashboard" />
                 </Items>
             </DxMenuItem>
             <DxMenuItem Text="製程參數" IconCssClass="oi oi-info" Position="ItemPosition.Center">

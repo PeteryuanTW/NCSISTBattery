@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using NCSISTBattery.EFModel;
 using CommonLibraryP.MachinePKG;
 using CommonLibraryP.ShopfloorPKG;
+using CommonLibraryP.MapPKG;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +18,8 @@ builder.Services.AddDevExpressBlazor(options => {
 });
 
 builder.AddMachineService();
-//builder.AddShopfloorService();
+builder.AddShopfloorService();
+builder.AddMapService();
 
 builder.Services.AddSingleton<WeatherForecastService>();
 
