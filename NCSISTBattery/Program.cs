@@ -5,6 +5,10 @@ using NCSISTBattery.EFModel;
 using CommonLibraryP.MachinePKG;
 using CommonLibraryP.ShopfloorPKG;
 using CommonLibraryP.MapPKG;
+using NCSISTBattery.Machine;
+using CommonLibraryP.Data;
+using DevExpress.Blazor;
+using System.Drawing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +22,10 @@ builder.Services.AddDevExpressBlazor(options => {
 });
 
 builder.AddMachineService();
+MachineTypeEnumHelper.AddCustomConnection<CustomModbusMachine>(10);
+CommonEnumHelper.AddCustomStatus(150, "Custom Status", ButtonRenderStyle.Danger, Color.FromArgb(204, 0, 0));
+
+
 builder.AddShopfloorService();
 builder.AddMapService();
 
