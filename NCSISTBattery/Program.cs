@@ -1,13 +1,15 @@
-using NCSISTBattery.Services;
-using NCSISTBattery.Components;
-using Microsoft.EntityFrameworkCore;
-using NCSISTBattery.EFModel;
-using CommonLibraryP.MachinePKG;
-using CommonLibraryP.ShopfloorPKG;
-using CommonLibraryP.MapPKG;
-using NCSISTBattery.Machine;
 using CommonLibraryP.Data;
+using CommonLibraryP.MachinePKG;
+using CommonLibraryP.MapPKG;
+using CommonLibraryP.NotificationUtility;
+using CommonLibraryP.ShopfloorPKG;
 using DevExpress.Blazor;
+using Microsoft.EntityFrameworkCore;
+using NCSISTBattery.Components;
+using NCSISTBattery.EFModel;
+using NCSISTBattery.Machine;
+using NCSISTBattery.Services;
+using OfficeOpenXml;
 using System.Drawing;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,13 +23,14 @@ builder.Services.AddDevExpressBlazor(options => {
     options.SizeMode = DevExpress.Blazor.SizeMode.Large;
 });
 
-builder.AddMachineService();
-MachineTypeEnumHelper.AddCustomConnection<CustomModbusMachine>(10);
-CommonEnumHelper.AddCustomStatus(150, "Custom Status", ButtonRenderStyle.Danger, Color.FromArgb(204, 0, 0));
+//builder.AddMachineService();
+//MachineTypeEnumHelper.AddCustomConnection<CustomModbusMachine>(10);
+//CommonEnumHelper.AddCustomStatus(150, "Custom Status", ButtonRenderStyle.Danger, Color.FromArgb(204, 0, 0));
 
 
 builder.AddShopfloorService();
-builder.AddMapService();
+//builder.Services.AddScoped<NotificationService>();
+//builder.AddMapService();
 
 builder.Services.AddSingleton<WeatherForecastService>();
 
@@ -40,11 +43,9 @@ builder.Services.AddDbContextFactory<NCSISTBatteryDBContext>(options =>
 builder.Services.AddSingleton<DataService>();
 builder.Services.AddHostedService<InitService>();
 
-
-
-
-
 builder.Services.AddMvc();
+
+ExcelPackage.License.SetNonCommercialOrganization("TM Robot");
 
 var app = builder.Build();
 

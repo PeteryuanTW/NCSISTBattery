@@ -13,7 +13,7 @@ namespace NCSISTBattery.Services
             using (var scope = scopeFactory.CreateScope())
             {
                 var machineService = scope.ServiceProvider.GetRequiredService<DataService>();
-                await machineService.InitAllJigs();
+                //await machineService.InitAllJigs();
             }
         }
     }

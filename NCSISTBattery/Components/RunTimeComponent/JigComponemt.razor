@@ -1,33 +1,73 @@
 ﻿@rendermode InteractiveServer
+@inject DataService dataService
 
-
-@if (hasJig)
-{
-    <DxListBox TData="HeatPiece" TValue="HeatPiece" Data="@totalHeatPieces" ReadOnly="true">
-        <ItemDisplayTemplate>
-            <div>
-                <DxButton Text="@($"{context.DataItem.Name}({context.DataItem.Heat})")" Enabled="false" RenderStyle="@((ButtonRenderStyle)context.DataItem.Material.StyleIndex)" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
-            </div>
-        </ItemDisplayTemplate>
-    </DxListBox>
-}
+<div class="w-100 h-100 rounded border @(BorderColorCss)" @onclick="SelectClick">
+    <DxGridLayout>
+        <Rows>
+            <DxGridLayoutRow Height="8fr" Areas="name"></DxGridLayoutRow>
+            <DxGridLayoutRow Height="4fr" Areas="btn"></DxGridLayoutRow>
+        </Rows>
+        <Columns>
+            <DxGridLayoutColumn Width="12fr"></DxGridLayoutColumn>
+        </Columns>
+        <Items>
+            <DxGridLayoutItem Area="name">
+                <Template>
+                    <div class="d-flex justify-content-center align-items-center h-100 fs-3 @(TextColorCss)">
+                        @($"{JigParameter.Name}({material})")
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Area="btn">
+                <Template>
+                    <div class="d-flex justify-content-center align-items-center">
+                        <DxButton Click="InfoBtnClick" IconCssClass="bi bi-info-lg" RenderStyle="@infoBtnStyle" Visible="@IsSelected" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+        </Items>
+    </DxGridLayout>
+</div>
 @code {
     [Parameter]
-    public Jig? JigParameter { get; set; }
+    public Jig JigParameter { get; set; } = null!;
+    [Parameter]
+    public bool IsSelected { get; set; }
+    private ButtonRenderStyle infoBtnStyle => IsSelected ? ButtonRenderStyle.Info : ButtonRenderStyle.Secondary;
+    private string BorderColorCss => IsSelected ? "border-info" : "border-white";
+    private string TextColorCss => IsSelected ? "text-info" : "text-white";
 
-    private bool hasJig => JigParameter is not null;
+    [Parameter]
+    public EventCallback<Guid> SelectClickCB { get; set; }
+    [Parameter]
+    public EventCallback InfoClickCB { get; set; }
 
-    private List<HeatPiece> totalHeatPieces => hasJig ? JigParameter.JigContent : new();
-    private List<HeatPiece> displayHeatPieces => hasJig ? totalHeatPieces.Skip(ActivePageIndex).Take(pageSize).ToList() : new();
-    private HeatPiece? heatPiece;
+    private string material = string.Empty;
 
-    private int pageSize = 10;
-    private int totalPage => (int)Math.Ceiling((float)totalHeatPieces.Count / pageSize);
-
-    private int ActivePageIndex { get; set; }
-
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
-        return base.OnInitializedAsync();
+        await GetMaterialByCode();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task GetMaterialByCode()
+    {
+        if (JigParameter.MaterialTypeCode is 0)
+        {
+            material = "通用";
+            return;
+        }
+        var target = await dataService.GetMaterialByCode(JigParameter.MaterialTypeCode);
+        material = target is not null ? target.Name : "未定義";
+    }
+
+    private async Task SelectClick()
+    {
+        await SelectClickCB.InvokeAsync(JigParameter.Id);
+    }
+
+    private async Task InfoBtnClick()
+    {
+        await InfoClickCB.InvokeAsync();
     }
 }

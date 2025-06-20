@@ -11,6 +11,33 @@ namespace NCSISTBattery.Data
             return Enum.GetValues(typeof(ButtonRenderStyle)).OfType<ButtonRenderStyle>()
                 .Select(x => new HeatpieceStyleWrapperClass(x));
         }
+
+        public static IEnumerable<WorkAreaWrapperClass> GetWorkAreaWrapperClasses()
+        {
+            return Enum.GetValues(typeof(WorkArea)).OfType<WorkArea>()
+                .Select(x => new WorkAreaWrapperClass(x));
+        }
+
+        public static string GetWorkAreaChinese(string code)
+        {
+            //var a = GetHeatpieceStylesWrapperClass();
+            var target = GetWorkAreaWrapperClasses().FirstOrDefault(x=>x.Index.ToString() == code);
+            
+            if (target is not null)
+            {
+                return target.DisplayName.ToString() switch
+                {
+                    "GantryArea" => "龍門區",
+                    "PorcessingArea" => "在製區",
+                    "ElectrodeHandleArea" => "極柄區",
+                    _ => "未知",
+                };
+            }
+            else
+            {
+                return "未知";
+            }
+        }
     }
 
     public class HeatpieceStyleWrapperClass : EnumWrapper
@@ -35,5 +62,24 @@ namespace NCSISTBattery.Data
         Processing = 0,
         InQueue = 1,
         Finished = 2,
+    }
+
+    public enum WorkArea
+    {
+        GantryArea,
+        PorcessingArea,
+        ElectrodeHandleArea,
+    }
+
+    public class WorkAreaWrapperClass : EnumWrapper
+    {
+        public WorkAreaWrapperClass(WorkArea workArea)
+        {
+            WorkArea = workArea;
+            index = (int)workArea;
+            displayName = workArea.ToString();
+        }
+
+        public WorkArea WorkArea { get; init; }
     }
 }

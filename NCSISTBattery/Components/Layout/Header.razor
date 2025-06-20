@@ -1,4 +1,5 @@
 ﻿@rendermode InteractiveServer
+@inject DataService dataService
 
 <div class="card p-2 " style="margin:1rem">
     <DxMenu Orientation="Orientation.Horizontal"
@@ -8,10 +9,18 @@
     CollapseItemToIconMode="MenuCollapseItemToIconMode.All">
         <Items>
             <DxMenuItem Text="排片狀態" IconCssClass="oi oi-menu" NavigateUrl="/" Position="ItemPosition.Center" />
-            <DxMenuItem Text="工站" IconCssClass="oi oi-laptop" Position="ItemPosition.Center">
+            <DxMenuItem Text="製造現場" IconCssClass="oi oi-laptop" Position="ItemPosition.Center">
                 <Items>
-                    <DxMenuItem IconCssClass="oi oi-cog" Text="設定" NavigateUrl="/ProcessSetting" />
-                    <DxMenuItem Text="運作狀態" NavigateUrl="/StationsPage" IconCssClass="oi oi-dashboard" />
+                    <DxMenuItem IconCssClass="oi oi-cog" Text="製程設定" NavigateUrl="/ProcessSetting" />
+                    <DxMenuItem Text="工站狀態" NavigateUrl="/StationsPage" IconCssClass="oi oi-dashboard" />
+                    <DxMenuItem Text="組裝狀態" IconCssClass="oi oi-dashboard">
+                        <Items>
+                            @foreach (var area in workAreaWrapperClasses)
+                            {
+                                <DxMenuItem Text="@(NCSISTBatteryEnumHelper.GetWorkAreaChinese(area.Index.ToString()))" NavigateUrl="@($"/JigsDashboard/{area.Index}")" />
+                            }
+                        </Items>
+                    </DxMenuItem>
                 </Items>
             </DxMenuItem>
             <DxMenuItem Text="地圖" IconCssClass="oi oi-map" Position="ItemPosition.Center">
@@ -22,14 +31,8 @@
             </DxMenuItem>
             <DxMenuItem Text="製程參數" IconCssClass="oi oi-info" Position="ItemPosition.Center">
                 <Items>
-                    <DxMenuItem Text="熱片種類" IconCssClass="oi oi-contrast" NavigateUrl="/MaterialSetting" />
+                    <DxMenuItem Text="原料種類" IconCssClass="oi oi-contrast" NavigateUrl="/MaterialSetting" />
                     <DxMenuItem Text="配方編輯" IconCssClass="oi oi-list" NavigateUrl="/RecipeSetting" />
-                </Items>
-            </DxMenuItem>
-            <DxMenuItem Text="連線" IconCssClass="oi oi-rss" Position="ItemPosition.Center">
-                <Items>
-                    <DxMenuItem IconCssClass="oi oi-monitor" Text="機台" NavigateUrl="/MachineSetting" />
-                    <DxMenuItem IconCssClass="oi oi-tags" Text="訊號" NavigateUrl="/TagSetting" />
                 </Items>
             </DxMenuItem>
         </Items>
@@ -37,5 +40,10 @@
 </div>
 
 @code {
+    private IEnumerable<WorkAreaWrapperClass> workAreaWrapperClasses = NCSISTBatteryEnumHelper.GetWorkAreaWrapperClasses();
 
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
 }

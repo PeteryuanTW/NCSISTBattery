@@ -1,0 +1,146 @@
+﻿@page "/JigsSetting"
+@rendermode InteractiveServer
+
+@inject DataService dataService
+@inject NotificationService notificationService
+@inject NavigationManager nav
+
+<DxGrid @ref="@grid" Data="@jigs" AllowSelectRowByClick="true" @bind-SelectedDataItem="@targetJigObj" SelectionMode="GridSelectionMode.Single" DataItemDeleting="DeleteJig" HighlightRowOnHover="true">
+    <ToolbarTemplate>
+        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+            <Items>
+                <DxToolbarItem IconCssClass="oi oi-plus" Click="NewJigClicked" BeginGroup="true" />
+                <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="@targetJigSelected" Click="ShowPopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                <DxToolbarItem IconCssClass="oi oi-trash" Enabled="@targetJigSelected" Click="ShowDelete" Alignment="ToolbarItemAlignment.Right" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
+            </Items>
+        </DxToolbar>
+    </ToolbarTemplate>
+    <Columns>
+        <DxGridDataColumn FieldName="@nameof(Jig.Name)"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="@nameof(Jig.MaterialTypeCode)"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="@nameof(Jig.AreaCode)"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="@nameof(Jig.Row)"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="@nameof(Jig.RowSpan)"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="@nameof(Jig.ColumnIndex)"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="@nameof(Jig.ColumnSpan)"></DxGridDataColumn>
+    </Columns>
+</DxGrid>
+
+<DxPopup @bind-Visible="@popupVisible" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <HeaderTemplate>
+        <div class="w-100 p-3 border border-bottom">
+            <DxToolbar>
+                <Items>
+                    <DxToolbarItem IconCssClass="oi oi-x" Click="ClosePopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                </Items>
+            </DxToolbar>
+        </div>
+    </HeaderTemplate>
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@targetJig" Context="EditFormContext" OnValidSubmit="UpsertJig">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="名稱" ColSpanLg="6" BeginRow="true">
+                    <DxTextBox @bind-Text="@targetJig.Name" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="物料不限制" ColSpanLg="3">
+                    <DxCheckBox @bind-Checked="@targetJig.MaterialFree" CheckType="CheckType.Switch"></DxCheckBox>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="物料類型" ColSpanLg="3">
+                    <DxComboBox Data="@materials" @bind-Value="@targetJig.MaterialTypeCode" ReadOnly="@(targetJig.MaterialFree)" ValueFieldName="@nameof(Material.TypeCode)" TextFieldName="@nameof(Material.Name)"></DxComboBox>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="區域" ColSpanLg="6">
+                    <DxComboBox Data="@workAreaWrapperClasses" @bind-Value="@targetJig.AreaCode" ValueFieldName="@nameof(WorkAreaWrapperClass.Index)" TextFieldName="@nameof(WorkAreaWrapperClass.DisplayName)"></DxComboBox>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="行" ColSpanLg="3" BeginRow="true">
+                    <DxSpinEdit @bind-Value="@targetJig.Row" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="行跨度" ColSpanLg="3">
+                    <DxSpinEdit @bind-Value="@targetJig.RowSpan" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="列" ColSpanLg="3">
+                    <DxSpinEdit @bind-Value="@targetJig.ColumnIndex" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="列跨度" ColSpanLg="3">
+                    <DxSpinEdit @bind-Value="@targetJig.ColumnSpan" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
+
+@code {
+    IGrid? grid { get; set; }
+    private List<Jig> jigs = new List<Jig>();
+    private Object? targetJigObj;
+    private Jig? targetJig => targetJigObj as Jig;
+    private bool targetJigSelected => targetJig is not null;
+
+    private bool popupVisible = false;
+    private IEnumerable<WorkAreaWrapperClass> workAreaWrapperClasses = NCSISTBatteryEnumHelper.GetWorkAreaWrapperClasses();
+    private List<Material> materials = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitJigs();
+        await InitMaterials();
+    }
+
+    private async Task InitJigs()
+    {
+        jigs = await dataService.GetAllJigsWithContent();
+        grid?.ClearSelection();
+    }
+
+    private async Task InitMaterials()
+    {
+        materials = await dataService.GetAllMaterials();
+    }
+
+    private void ShowPopup()
+    {
+        popupVisible = true;
+    }
+
+    private async Task ClosePopup()
+    {
+        popupVisible = false;
+        await Task.Delay(1);
+        //await InitJigs();
+        nav.Refresh();
+    }
+
+    private void NewJigClicked()
+    {
+        targetJigObj = new Jig();
+        ShowPopup();
+    }
+
+    private async Task UpsertJig()
+    {
+        var res = await dataService.UpsertJig(targetJig);
+        await ClosePopup();
+        notificationService.ShowToast(res);
+    }
+
+    private void ShowDelete()
+    {
+        grid?.ShowDataItemDeleteConfirmation(targetJig);
+    }
+
+    private async Task DeleteJig()
+    {
+        var res = await dataService.DeleteJig(targetJig);
+        await InitJigs();
+    }
+}

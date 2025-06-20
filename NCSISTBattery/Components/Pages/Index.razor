@@ -19,16 +19,16 @@
                 <Template>
                     <DxToolbar Title="@(dataService.CurrentRecipe?.Name)">
                         <Items>
-                            <DxToolbarItem BeginGroup="true" IconCssClass="oi oi-random" Click="@(async () => await dataService.PushFakeHeatPieceIntiJigs())" />
-                            <DxToolbarItem BeginGroup="true" Tooltip="上傳" RenderStyle="ButtonRenderStyle.Info" IconCssClass="oi oi-cloud-upload" Id="dataimport" />
-                            <DxToolbarItem BeginGroup="true" Tooltip="切換配方" Click="@ShowRecipeSelectPopup" RenderStyle="ButtonRenderStyle.Primary" IconCssClass="oi oi-loop-circular" />
+                            <DxToolbarItem BeginGroup="true" IconCssClass="oi oi-random"/>
+@*                             <DxToolbarItem BeginGroup="true" Tooltip="上傳" RenderStyle="ButtonRenderStyle.Info" IconCssClass="oi oi-cloud-upload" Id="dataimport" />
+ *@                            <DxToolbarItem BeginGroup="true" Tooltip="切換配方" Click="@ShowRecipeSelectPopup" RenderStyle="ButtonRenderStyle.Primary" IconCssClass="oi oi-loop-circular" />
                             <DxToolbarItem BeginGroup="true" Tooltip="模擬預算" Click="@StartCalculating" RenderStyle="ButtonRenderStyle.Warning" IconCssClass="oi oi-calculator" />
                         </Items>
                     </DxToolbar>
                 </Template>
             </DxGridLayoutItem>
             <DxGridLayoutItem Row="1" Column="1">
-                <Template>
+                @* <Template>
                     <DxSplitter CssClass="card h-100 w-100" Orientation="Orientation.Vertical">
                         <Panes>
                             <DxSplitterPane Size="60%" AllowCollapse="true">
@@ -85,15 +85,15 @@
                             </DxSplitterPane>
                         </Panes>
                     </DxSplitter>
-                </Template>
+                </Template> *@
             </DxGridLayoutItem>
         </Items>
     </DxGridLayout>
 </DxLoadingPanel>
-
+@* 
 <DxFileInput ExternalSelectButtonCssSelector="#dataimport"
              MaxFileSize="15000000">
-</DxFileInput>
+</DxFileInput> *@
 
 <DxPopup @bind-Visible="@recipeSelectPopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
     <HeaderTemplate>
@@ -168,18 +168,18 @@
 @code {
     private List<Jig> AllJigs = new();
 
-    private List<Jig> StartJigs => AllJigs.Where(x => !x.IsDestination).ToList();
+    //private List<Jig> StartJigs => AllJigs.Where(x => !x.IsDestination).ToList();
     private int startTabOndex { get; set; }
-    private List<Jig> OnboardStartJigs => StartJigs.Where(x => x.IsOnBoard).ToList();
-    private List<Jig> CandidateStartJigs => StartJigs.Where(x => !x.IsOnBoard).ToList();
-    private List<Jig> StartJigDisplay => startTabOndex switch
-    {
-        0 => OnboardStartJigs,
-        1 => CandidateStartJigs,
-        _ => new List<Jig> { },
-    };
+    //private List<Jig> OnboardStartJigs => StartJigs.Where(x => x.IsOnBoard).ToList();
+    //private List<Jig> CandidateStartJigs => StartJigs.Where(x => !x.IsOnBoard).ToList();
+    // private List<Jig> StartJigDisplay => startTabOndex switch
+    // {
+    //     0 => OnboardStartJigs,
+    //     1 => CandidateStartJigs,
+    //     _ => new List<Jig> { },
+    // };
 
-    private List<Jig> DestJigs => AllJigs.Where(x => x.IsDestination).ToList();
+    //private List<Jig> DestJigs => AllJigs.Where(x => x.IsDestination).ToList();
 
     private bool recipeSelectPopup = false;
     private void ShowRecipeSelectPopup() => recipeSelectPopup = true;
@@ -202,7 +202,7 @@
 
     private Task UpdateJigs()
     {
-        AllJigs = dataService.Jigs;
+        //AllJigs = dataService.Jigs;
         return Task.CompletedTask;
     }
 

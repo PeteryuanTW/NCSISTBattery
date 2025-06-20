@@ -1,7 +1,11 @@
-﻿using DevExpress.Blazor.Popup.Internal;
+﻿using CommonLibraryP.API;
+using DevExpress.Blazor;
+using DevExpress.Blazor.Popup.Internal;
 using Microsoft.EntityFrameworkCore;
 using NCSISTBattery.EFModel;
+using OfficeOpenXml;
 using System;
+using System.Threading.Tasks;
 
 
 
@@ -25,21 +29,49 @@ namespace NCSISTBattery.Services
             }
         }
 
-        public async Task UpsertMaterial(Material material)
+        public async Task<Material?> GetMaterialByCode(ushort code)
         {
             using (var scope = scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
-                var target = await dbContext.Materials.FirstOrDefaultAsync(x => x.Id == material.Id);
-                if (target is not null)
+                return await dbContext.Materials.AsNoTracking().FirstOrDefaultAsync(x => x.TypeCode == code);
+            }
+        }
+
+        public async Task<ushort> GetMaterialByName(string name)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
+                var target = await dbContext.Materials.AsNoTracking().FirstOrDefaultAsync(x => x.Name == name);
+                return target is not null ? target.TypeCode : ushort.MinValue;
+            }
+        }
+
+        public async Task<RequestResult> UpsertMaterial(Material material)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                try
                 {
-                    dbContext.Entry(target).CurrentValues.SetValues(material);
+                    var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
+                    var target = await dbContext.Materials.FirstOrDefaultAsync(x => x.Id == material.Id);
+                    if (target is not null)
+                    {
+                        dbContext.Entry(target).CurrentValues.SetValues(material);
+                    }
+                    else
+                    {
+                        await dbContext.Materials.AddAsync(material);
+                    }
+                    await dbContext.SaveChangesAsync();
+                    return new(2, $"Upsert material {material.Name} success");
                 }
-                else
+                catch (Exception ex)
                 {
-                    await dbContext.Materials.AddAsync(material);
+                    return new(2, $"Upsert material {material.Name} fail({ex.Message})");
                 }
-                await dbContext.SaveChangesAsync();
+
             }
         }
 
@@ -264,77 +296,181 @@ namespace NCSISTBattery.Services
         #endregion
 
         #region jigs
-        private List<Jig> jigs = new();
-        public List<Jig> Jigs => jigs;
 
         public Func<Task>? JigChangedFunc;
         private void JigChanged()
             => JigChangedFunc?.Invoke();
 
-        public async Task InitAllJigs()
+        public async Task<List<Jig>> GetAllJigsConfig()
         {
             using (var scope = scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
-                var allJigs = await dbContext.Jigs.AsNoTracking().ToListAsync();
-                foreach (var jig in allJigs)
+                return await dbContext.Jigs.AsNoTracking().ToListAsync();
+            }
+        }
+
+        public async Task<List<Jig>> GetAllJigsWithContent()
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
+                var jigs = await dbContext.Jigs.AsNoTracking().ToListAsync();
+                foreach (var jig in jigs)
                 {
-                    //start jig
-                    if (!jig.IsDestination)
+                    var jigContents = await dbContext.JigContents.Where(x => x.StartJigId == jig.Id).AsNoTracking().ToListAsync();
+                    var a = jigContents.Where(x => x.PushToStart && !x.PushToDestination).ToList();
+                    
+                    jig.ImportContents(jigContents.Where(x=>x.PushToStart && !x.PushToDestination).ToList());
+                }
+                return jigs;
+            }
+        }
+
+        public async Task<RequestResult> UpsertJig(Jig jig)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                try
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
+                    var target = await dbContext.Jigs.FirstOrDefaultAsync(x => x.Id == jig.Id);
+                    if (target is not null)
                     {
-                        var heatPieces = await dbContext.HeatPieces.Where(x => x.StartJigId == jig.Id && !x.IsFinished && !x.IsRecord).ToListAsync();
-                        jig.ImportHeatPiece(heatPieces);
+                        dbContext.Entry(target).CurrentValues.SetValues(jig);
                     }
                     else
                     {
-                        var heatPieces = await dbContext.HeatPieces.Where(x => x.DestinationJigId == jig.Id && x.IsFinished && !x.IsRecord).ToListAsync();
-                        jig.ImportHeatPiece(heatPieces);
+                        await dbContext.Jigs.AddAsync(jig);
                     }
+                    await dbContext.SaveChangesAsync();
+                    return new(2, $"Upsert jig {jig.Name} success");
                 }
-                jigs = allJigs;
-            }
-        }
-
-        public async Task PushFakeHeatPieceIntiJigs(int amount = 50)
-        {
-            foreach (var jig in jigs)
-            {
-                var heatpieces = await GenerateFakeHeatPiece(amount);
-                jig.ImportHeatPiece(heatpieces);
-                JigChanged();
-                JigChangedFunc?.Invoke();
-                await Task.Delay(500);
-            }
-        }
-
-        private async Task<List<HeatPiece>> GenerateFakeHeatPiece(int amount = 10)
-        {
-            Random r = new();
-            float min = 1.0f;
-            float max = 10.0f;
-
-            var res = new List<HeatPiece>();
-
-            for (int i = 0; i < amount; i++)
-            {
-                var m = await GetRandomMaterial();
-                if (m is not null)
+                catch (Exception ex)
                 {
-                    var tmp = new HeatPiece
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = DateTime.Now.ToString("yyyyMMddHHmmssfff"),
-                        Heat = (float)Math.Round(r.NextDouble() * (max - min) + min, 2),
-
-                        MaterialId = m.Id,
-                        Material = m,
-                    };
-                    res.Add(tmp);
+                    return new(4, $"Upsert jig {jig.Name} fail({ex.Message})");
                 }
 
             }
+        }
 
-            return res;
+        public async Task<RequestResult> DeleteJig(Jig jig)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                try
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
+                    var target = await dbContext.Jigs.FirstOrDefaultAsync(x => x.Id == jig.Id);
+                    if (target is not null)
+                    {
+                        dbContext.Remove(target);
+                        await dbContext.SaveChangesAsync();
+                        return new(2, $"Delete jig {jig.Name} success");
+                    }
+                    return new(4, $"Jig {jig.Name} not found");
+                }
+                catch (Exception ex)
+                {
+                    return new(4, $"Delete jig {jig.Name} fail({ex.Message})");
+                }
+
+            }
+        }
+
+        public async Task<List<Jig>> GetJigsByArea(string areaCode)
+        {
+            var allJigs = await GetAllJigsWithContent();
+            return allJigs.Where(x => x.AreaCode.ToString() == areaCode).ToList();
+        }
+
+        //import from data or typing
+        public async Task<RequestResult> StartPushIntoJig(Jig jig, List<JigContent> jigContents)
+        {
+            var allJigs = await GetAllJigsWithContent();
+            var targetJig = allJigs.FirstOrDefault(x => x.Id == jig.Id);
+            if (targetJig is null)
+            {
+                return new(4, $"jig not found");
+            }
+            foreach (var jigContent in jigContents)
+            {
+                var targetMaterial = await GetMaterialByCode(jigContent.MaterialCode);
+                if (targetMaterial is null)
+                {
+                    return new(4, $"material not found");
+                }
+                if (!jig.MaterialFree && jig.MaterialTypeCode != targetMaterial.TypeCode)
+                {
+                    return new(4, $"{jig.Name} and {targetMaterial.Name} type not matched");
+                }
+                jigContent.InitContentToJig(targetJig);
+            }
+            return await InsertJigContent(jigContents);
+        }
+
+        private async Task<RequestResult> InsertJigContent(List<JigContent> jigContents)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                try
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<NCSISTBatteryDBContext>();
+                    await dbContext.JigContents.AddRangeAsync(jigContents);
+                    await dbContext.SaveChangesAsync();
+                    return new(2, $"jig contents insert success");
+                }
+                catch (Exception ex)
+                {
+                    return new(4, $"Insert jig contents fail({ex.Message})");
+                }
+
+            }
+        }
+
+        #endregion
+
+        #region jig content
+
+        public async Task<List<JigContent>> GetJigContentFromFile(IReadOnlyList<IFileInputSelectedFile> Files)
+        {
+            if (Files.Count is not 1)
+            {
+                return new List<JigContent>();
+            }
+            var targetFile = Files.FirstOrDefault();
+            using var stream = new System.IO.MemoryStream();
+            await targetFile.OpenReadStream(targetFile.Size).CopyToAsync(stream);
+            using var package = new ExcelPackage(stream);
+            var worksheet = package.Workbook.Worksheets[0];
+            int rowCount = worksheet.Dimension.Rows;
+
+            var result = new List<JigContent>();
+            for (int row = 2; row <= rowCount; row++) // title at first row
+            {
+                var parsingRes = await GetJigContentFromRow(worksheet.Cells, row);
+                if (parsingRes.MaterialCode is 0)
+                {
+                    throw new Exception($"parsing data at row {row} error");
+                }
+                result.Add(parsingRes);
+            }
+            return result;
+        }
+
+        private async Task<JigContent> GetJigContentFromRow(ExcelRange excelRange, int row)
+        {
+            return new JigContent
+            {
+                Id = Guid.NewGuid(),
+                Name = excelRange[row, 3].Text,
+                Heat = float.TryParse(excelRange[row, 5].Text, out var heat) ? heat : 0,
+                MaterialCode = await GetMaterialByName(excelRange[row, 4].Text),
+                Thickness = excelRange[row, 11].Text.Split(',')
+                .Select(s => double.Parse(s))
+                .Average(),
+
+            };
         }
 
         #endregion

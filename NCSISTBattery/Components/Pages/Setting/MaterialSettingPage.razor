@@ -1,8 +1,7 @@
 ﻿@page "/MaterialSetting"
 @rendermode InteractiveServer
 @inject DataService dataService
-
-<div style=""></div>
+@inject NotificationService notificationService
 
 <DxGrid @ref="@grid" Data="@materials" FocusedRowEnabled="true" FocusedRowChanged="MaterialSelected" DataItemDeleting="DeleteMaterial" HighlightRowOnHover="true">
     <ToolbarTemplate>
@@ -16,7 +15,7 @@
     </ToolbarTemplate>
     <Columns>
         <DxGridDataColumn FieldName="@nameof(Material.Name)"></DxGridDataColumn>
-        <DxGridDataColumn FieldName="@nameof(Material.Type)"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="@nameof(Material.TypeCode)"></DxGridDataColumn>
     </Columns>
 </DxGrid>
 
@@ -37,14 +36,14 @@
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="名稱" ColSpanLg="6" BeginRow="true">
                     <DxTextBox @bind-Text="@taregtMaterial.Name" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
-                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="類型" ColSpanLg="6">
-                    <DxTextBox @bind-Text="@taregtMaterial.Type" ShowValidationIcon="true" />
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="類型" ColSpanLg="3">
+                    <DxSpinEdit @bind-Value="@taregtMaterial.TypeCode" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="顏色" ColSpanLg="6">
                     <DxComboBox Data="@heatpieceStyleWrapperClasses" @bind-Value="@taregtMaterial.StyleIndex" ValueFieldName="@nameof(HeatpieceStyleWrapperClass.Index)" TextFieldName="@nameof(HeatpieceStyleWrapperClass.DisplayName)"></DxComboBox>
                 </DxFormLayoutItem>
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="預覽" ColSpanLg="6">
-                    <DxButton Text="@($"{taregtMaterial?.Name}({taregtMaterial?.Type})")" RenderStyle="@((ButtonRenderStyle)taregtMaterial.StyleIndex)" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
+                    <DxButton Text="@($"{taregtMaterial?.Name}({taregtMaterial?.TypeCode})")" RenderStyle="@((ButtonRenderStyle)taregtMaterial.StyleIndex)" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
                 </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="12">
                     <hr />
@@ -101,8 +100,9 @@
 
     private async Task UpsertMaterial()
     {
-        await dataService.UpsertMaterial(taregtMaterial);
+        var res = await dataService.UpsertMaterial(taregtMaterial);
         await ClosePopup();
+        notificationService.ShowToast(res);
     }
 
     private void ShowDelete()
