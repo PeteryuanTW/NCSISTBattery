@@ -45,6 +45,14 @@ builder.Services.AddHostedService<InitService>();
 
 builder.Services.AddMvc();
 
+
+builder.Services.AddControllers(); // 如果還沒加
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+
+
+
 ExcelPackage.License.SetNonCommercialOrganization("TM Robot");
 
 var app = builder.Build();
@@ -63,5 +71,15 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AllowAnonymous();
+
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+});
+app.MapControllers(); // 確保有這行
+
+
 
 app.Run();
