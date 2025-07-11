@@ -1,5 +1,8 @@
 ﻿@page "/"
+@using System.Drawing
+@inject ShopfloorService shopfloorService
 @rendermode InteractiveServer
+@implements IDisposable
 
 <DxLoadingPanel @bind-Visible="isCalculating"
                 IsContentBlocked="true"
@@ -9,131 +12,96 @@
     <DxGridLayout>
         <Rows>
             <DxGridLayoutRow Height="1fr" />
-            <DxGridLayoutRow Height="10fr" />
+            <DxGridLayoutRow Height="11fr" />
         </Rows>
         <Columns>
-            <DxGridLayoutColumn Width="12fr" />
+            <DxGridLayoutColumn Width="6fr" />
+            <DxGridLayoutColumn Width="6fr" />
         </Columns>
         <Items>
-            <DxGridLayoutItem Row="0" Column="0">
+            <DxGridLayoutItem Row="0" Column="0" ColumnSpan="2">
                 <Template>
-                    <DxToolbar Title="@(dataService.CurrentRecipe?.Name)">
+                    <DxToolbar Title="@($"當前配方: {CurrentRecipe?.Name}")" SizeMode="SizeMode.Large">
                         <Items>
-                            <DxToolbarItem BeginGroup="true" IconCssClass="oi oi-random"/>
-@*                             <DxToolbarItem BeginGroup="true" Tooltip="上傳" RenderStyle="ButtonRenderStyle.Info" IconCssClass="oi oi-cloud-upload" Id="dataimport" />
- *@                            <DxToolbarItem BeginGroup="true" Tooltip="切換配方" Click="@ShowRecipeSelectPopup" RenderStyle="ButtonRenderStyle.Primary" IconCssClass="oi oi-loop-circular" />
+                            <DxToolbarItem BeginGroup="true" Tooltip="切換配方" Click="@ShowRecipeSelectPopup" RenderStyle="ButtonRenderStyle.Primary" IconCssClass="oi oi-loop-circular" />
                             <DxToolbarItem BeginGroup="true" Tooltip="模擬預算" Click="@StartCalculating" RenderStyle="ButtonRenderStyle.Warning" IconCssClass="oi oi-calculator" />
                         </Items>
                     </DxToolbar>
                 </Template>
             </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="0" Visible="@s">
+                <Template>
+                    <DxCarousel Width="100%"
+                                AllowPagingByClick="false"
+                                LoopNavigationEnabled="true"
+                                SlideShowEnabled="true"
+                                NavButtonsDisplayMode="CarouselControlsDisplayMode.VisibleOnHover"
+                                PagerDisplayMode="CarouselControlsDisplayMode.VisibleOnHover"
+                                PauseSlideShowOnHover="true">
+                        <Items>
+                            @foreach (var area in workAreaWrapperClass)
+                            {
+                                <DxCarouselItem>
+                                    <div class="demo-carousel-content">
+                                        <DxChart @ref="@dxChart" T="Jig"
+                                                 Data="@(allJigs.Where(x=>x.AreaCode == area.Index))"
+                                                 Width="100%"
+                                                 Height="100%">
+                                            <DxChartTitle Text="@($"{NCSISTBatteryEnumHelper.GetWorkAreaChinese(area.Index.ToString())}疊片數量")" />
+                                            <DxChartBarSeries T="Jig"
+                                                              TArgument="string"
+                                                              TValue="int"
+                                                              ArgumentField="@(x=>x.Name)"
+                                                              ValueField="@(x=>x.JigContent.Count())" />
+                                            <DxChartTooltip Enabled="true"
+                                                            Position="RelativePosition.Outside">
+                                                <div style="margin: 0.75rem">
+                                                    <div class="fw-bold">@context.Point.Argument</div>
+                                                    <div> @($"數量: {context.Point.Value} 片")</div>
+                                                </div>
+                                            </DxChartTooltip>
+                                            <DxChartLegend Visible="false"></DxChartLegend>
+                                        </DxChart>
+                                    </div>
+                                </DxCarouselItem>
+                            }
+                        </Items>
+                    </DxCarousel>
+                </Template>
+            </DxGridLayoutItem>
             <DxGridLayoutItem Row="1" Column="1">
-                @* <Template>
-                    <DxSplitter CssClass="card h-100 w-100" Orientation="Orientation.Vertical">
-                        <Panes>
-                            <DxSplitterPane Size="60%" AllowCollapse="true">
-                                <DxSplitter Orientation="Orientation.Horizontal">
-                                    <Panes>
-                                        <DxSplitterPane AllowCollapse="true">
-                                            <DxStackLayout Orientation="Orientation.Vertical">
-                                                <Items>
-                                                    <DxStackLayoutItem Length="1fr">
-                                                        <Template>
-                                                            <DxTabs @bind-ActiveTabIndex="@startTabOndex">
-                                                                <DxTab Text="在製"></DxTab>
-                                                                <DxTab Text="備援"></DxTab>
-                                                            </DxTabs>
-                                                        </Template>
-                                                    </DxStackLayoutItem>
-                                                    <DxStackLayoutItem Length="10fr">
-                                                        <Template>
-                                                            <div class="h-100">
-                                                                <DxTabs CssClass="h-100" TabsPosition="TabsPosition.Bottom">
-                                                                    @foreach (var destJig in StartJigDisplay)
-                                                                    {
-                                                                        <DxTabPage Text="@destJig.Name" CssClass="h-100">
-                                                                            <div class="p-3 h-100">
-                                                                                <JigComponemt JigParameter="@destJig" />
-                                                                            </div>
-                                                                        </DxTabPage>
-                                                                    }
-                                                                </DxTabs>
-                                                            </div>
-                                                            
-                                                        </Template>
-                                                    </DxStackLayoutItem>
-                                                </Items>
-                                            </DxStackLayout>
-                                        </DxSplitterPane>
-                                        <DxSplitterPane AllowCollapse="true">
-                                            <DxTabs>
-                                                @foreach (var destJig in DestJigs)
-                                                {
-                                                    <DxTabPage Text="@destJig.Name">
-                                                        <div class="demo-carousel-content">
-                                                            <JigComponemt JigParameter="@destJig" />
-                                                        </div>
-                                                    </DxTabPage>
-                                                }
-                                            </DxTabs>
-                                        </DxSplitterPane>
-                                    </Panes>
-                                </DxSplitter>
-                            </DxSplitterPane>
-                            <DxSplitterPane Size="40%" AllowCollapse="true">
-                                <CommandComponent />
-                            </DxSplitterPane>
-                        </Panes>
-                    </DxSplitter>
-                </Template> *@
+                <Template>
+                    <StationSummuryDonut />
+                </Template>
             </DxGridLayoutItem>
         </Items>
     </DxGridLayout>
 </DxLoadingPanel>
-@* 
-<DxFileInput ExternalSelectButtonCssSelector="#dataimport"
-             MaxFileSize="15000000">
-</DxFileInput> *@
 
-<DxPopup @bind-Visible="@recipeSelectPopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
-    <HeaderTemplate>
-        <div class="w-100 p-3 border border-bottom">
-            <DxToolbar>
-                <Items>
-                    <DxToolbarItem IconCssClass="oi oi-x" Click="CloseRecipeSelectPopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
-                </Items>
-            </DxToolbar>
-        </div>
-    </HeaderTemplate>
+<DxPopup @ref="@recipePopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
     <BodyContentTemplate Context="bodycontext">
-        <DxFormLayout>
-            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="配方選擇" ColSpanLg="12" BeginRow="true">
-                <DxComboBox Data="@recipes" Value="@(dataService.CurrentRecipe)" ValueChanged="@((Recipe? r) => RecipeChanged(r))" TextFieldName="@nameof(Recipe.Name)" />
-            </DxFormLayoutItem>
-            <DxFormLayoutItem ColSpanLg="12">
-                <hr />
-            </DxFormLayoutItem>
-            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
-                <DxToolbar>
-                    <Items>
-                        <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
-                    </Items>
-                </DxToolbar>
-            </DxFormLayoutItem>
-        </DxFormLayout>
+        <EditForm Model="@currentRecipeModel" Context="EditFormContext" OnValidSubmit="ChangeCurrentRecipe">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="配方選擇" ColSpanLg="12" BeginRow="true">
+                    <DxComboBox Data="@recipes" @bind-Value="@currentRecipeModel.RecipeId" TextFieldName="@nameof(Recipe.Name)" ValueFieldName="@nameof(Recipe.Id)" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </EditForm>
     </BodyContentTemplate>
 </DxPopup>
 
-<DxPopup @bind-Visible="@calculationPopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
-    <HeaderTemplate>
-        <div class="w-100 p-3 border border-bottom">
-            <DxToolbar>
-                <Items>
-                    <DxToolbarItem IconCssClass="oi oi-x" Click="CloseCalculationPopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
-                </Items>
-            </DxToolbar>
-        </div>
-    </HeaderTemplate>
+<DxPopup @ref="@CalculationResultPopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
     <BodyContentTemplate Context="bodycontext">
         <DxFormLayout>
             <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="耗時" ColSpanLg="6" BeginRow="true">
@@ -166,28 +134,38 @@
 </DxPopup>
 
 @code {
-    private List<Jig> AllJigs = new();
+    private DxChart? dxChart { get; set; }
+    private List<Jig> allJigs = new();
 
-    //private List<Jig> StartJigs => AllJigs.Where(x => !x.IsDestination).ToList();
-    private int startTabOndex { get; set; }
-    //private List<Jig> OnboardStartJigs => StartJigs.Where(x => x.IsOnBoard).ToList();
-    //private List<Jig> CandidateStartJigs => StartJigs.Where(x => !x.IsOnBoard).ToList();
-    // private List<Jig> StartJigDisplay => startTabOndex switch
-    // {
-    //     0 => OnboardStartJigs,
-    //     1 => CandidateStartJigs,
-    //     _ => new List<Jig> { },
-    // };
+    private IEnumerable<WorkAreaWrapperClass> workAreaWrapperClass = NCSISTBatteryEnumHelper.GetWorkAreaWrapperClasses();
 
-    //private List<Jig> DestJigs => AllJigs.Where(x => x.IsDestination).ToList();
+    private List<Station> stations = new();
 
-    private bool recipeSelectPopup = false;
-    private void ShowRecipeSelectPopup() => recipeSelectPopup = true;
-    private void CloseRecipeSelectPopup() => recipeSelectPopup = false;
+    private Recipe? CurrentRecipe;
+    private CurrentRecipeModel currentRecipeModel = new();
 
-    private bool calculationPopup = false;
-    private void ShowCalculationPopup() => calculationPopup = true;
-    private void CloseCalculationPopup() => calculationPopup = false;
+    private bool s = true;
+
+    private DxPopup? recipePopup { get; set; }
+    private async Task ShowRecipeSelectPopup()
+    {
+        currentRecipeModel = new CurrentRecipeModel
+        {
+            RecipeId = CurrentRecipe?.Id,
+        };
+        await recipePopup?.ShowAsync();
+    }
+    private async Task CloseRecipeSelectPopup()
+    {
+        await UpdateCurrentRecipe();
+        await recipePopup?.CloseAsync();
+    }
+
+    private bool chartReady = false;
+    private DxPopup? CalculationResultPopup { get; set; }
+    private async Task ShowCalculationPopup() => await CalculationResultPopup?.ShowAsync();
+    private async Task CloseCalculationPopup() => await CalculationResultPopup?.CloseAsync();
+
     private bool isCalculating = false;
 
     private List<Recipe> recipes = new();
@@ -196,31 +174,61 @@
     {
         await UpdateJigs();
         await GetRecipe();
+        await UpdateCurrentRecipe();
+        await UpdateStations();
         dataService.JigChangedFunc += UpdateJigs;
-        //return base.OnInitializedAsync();
     }
 
-    private Task UpdateJigs()
+    void IDisposable.Dispose()
     {
-        //AllJigs = dataService.Jigs;
-        return Task.CompletedTask;
+        dataService.JigChangedFunc -= UpdateJigs;
+    }
+
+    private async Task UpdateJigs()
+    {
+        allJigs = await dataService.GetAllJigsWithContent();
+        if (dxChart is null)
+            return;
+        dxChart?.RefreshData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UpdateStations()
+    {
+        stations = shopfloorService.Stations;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task GetRecipe()
     {
         recipes = await dataService.GetAllRecipes();
+
     }
 
-    private void RecipeChanged(Recipe? recipe)
+    private async Task UpdateCurrentRecipe()
     {
-        dataService.SetRecipe(recipe);
+        CurrentRecipe = await dataService.GetCurrentRecipe();
+    }
+
+    private async Task ChangeCurrentRecipe()
+    {
+        var res = await dataService.SetCurrentRecipe(currentRecipeModel.RecipeId);
+        await CloseRecipeSelectPopup();
+        notificationService.ShowToast(res);
     }
 
     private async Task StartCalculating()
     {
         isCalculating = true;
-        await Task.Delay(5000);
+        await dataService.PostCalculationDataDTO();
         isCalculating = false;
-        ShowCalculationPopup();
+        await ShowCalculationPopup();
     }
+
+
+
+
+    #region charts
+
+    #endregion
 }

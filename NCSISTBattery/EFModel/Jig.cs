@@ -26,7 +26,7 @@ namespace NCSISTBattery.EFModel
             }
         }
 
-        public ushort AreaCode { get; set; }
+        public int AreaCode { get; set; }
         [Range(0, 12)]
         public ushort Row { get; set; }
         [Range(1, 12)]

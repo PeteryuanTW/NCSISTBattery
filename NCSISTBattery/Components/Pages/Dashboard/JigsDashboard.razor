@@ -4,83 +4,111 @@
 @inject DataService dataService
 @inject NotificationService notificationService
 
-<DxDrawer @bind-IsOpen="@drawerVisible"
-          Mode="DrawerMode.Overlap"
-          Position="DrawerPosition.Right"
-          PanelWidth="50rem"
-          CloseOnTargetContentClick="false"
-          CloseOnEscape="false">
-    <HeaderTemplate>
-        @targetJig?.Name
-        <DxButton Click="CloseDrawer"
-                  IconCssClass="oi oi-x"
-                  RenderStyle="ButtonRenderStyle.Danger" />
-    </HeaderTemplate>
-    <BodyTemplate>
-        <DxGrid Data="@targetJig?.JigContent">
-            <Columns>
-                <DxGridDataColumn FieldName="@nameof(JigContent.Name)" />
-                <DxGridDataColumn FieldName="@nameof(JigContent.Heat)" />
-                <DxGridDataColumn FieldName="@nameof(JigContent.Thickness)"/>
-                <DxGridDataColumn FieldName="@nameof(JigContent.PushToStartTime)" DisplayFormat="G"/>
-            </Columns>
-        </DxGrid>
-    </BodyTemplate>
-    <FooterTemplate>
-    </FooterTemplate>
-    <TargetContent>
-        <DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
-            <Rows>
-                @for (int i = 0; i < 12; i++)
-                {
-                    <DxGridLayoutRow />
-                }
-            </Rows>
-            <Columns>
-                @for (int i = 0; i < 12; i++)
-                {
-                    <DxGridLayoutColumn />
-                }
-            </Columns>
-            <Items>
-                <DxGridLayoutItem Row="0" RowSpan="12" Column="0" ColumnSpan="12">
-                    <Template>
-                        <DxToolbar>
-                            <Items>
-                                <DxToolbarItem Text="@($"區域: {NCSISTBatteryEnumHelper.GetWorkAreaChinese(JigAreaCode)}")" Enabled="false" RenderStyleMode="ToolbarItemRenderStyleMode.Plain" BeginGroup="true"></DxToolbarItem>
-                                <DxToolbarItem Text="@($"選擇治具: {targetJig?.Name}")" RenderStyleMode="ToolbarItemRenderStyleMode.Plain" Enabled="false" BeginGroup="true"></DxToolbarItem>
-                                <DxToolbarItem Id="dataimport" IconCssClass="oi oi-cloud-upload" Enabled="@hasTargetJig" BeginGroup="true"></DxToolbarItem>
-                            </Items>
-                        </DxToolbar>
-                    </Template>
-                </DxGridLayoutItem>
-                @foreach (var jig in jigs)
-                {
-                    <DxGridLayoutItem Row="@jig.Row" RowSpan="@jig.RowSpan" Column="@jig.ColumnIndex" ColumnSpan="@jig.ColumnSpan">
-                        <Template>
-                            <JigComponemt JigParameter="@jig" IsSelected="@(JigSelected(jig.Id))" SelectClickCB="SelectClick" InfoClickCB="InfoClick"></JigComponemt>
-                        </Template>
-                    </DxGridLayoutItem>
-                }
-            </Items>
-        </DxGridLayout>
-    </TargetContent>
-</DxDrawer>
+
+<DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
+    <Rows>
+        @for (int i = 0; i < 12; i++)
+        {
+            <DxGridLayoutRow />
+        }
+    </Rows>
+    <Columns>
+        @for (int i = 0; i < 12; i++)
+        {
+            <DxGridLayoutColumn />
+        }
+    </Columns>
+    <Items>
+        <DxGridLayoutItem Row="0" RowSpan="12" Column="0" ColumnSpan="12">
+            <Template>
+                <DxToolbar SizeMode="SizeMode.Large">
+                    <Items>
+                        <DxToolbarItem Text="@($"區域: {NCSISTBatteryEnumHelper.GetWorkAreaChinese(JigAreaCode)}")" Enabled="false" RenderStyleMode="ToolbarItemRenderStyleMode.Plain" BeginGroup="true"></DxToolbarItem>
+                        <DxToolbarItem Text="@($"選擇治具: {targetJig?.Name}")" RenderStyleMode="ToolbarItemRenderStyleMode.Plain" Enabled="false" BeginGroup="true"></DxToolbarItem>
+                        <DxToolbarItem Id="dataimport" RenderStyle="ButtonRenderStyle.Primary" IconCssClass="oi oi-cloud-upload" Enabled="@hasTargetJig" BeginGroup="true"></DxToolbarItem>
+                        <DxToolbarItem RenderStyle="ButtonRenderStyle.Info" IconCssClass="bi bi-info-lg" Enabled="@hasTargetJig" Click="InfoClick" BeginGroup="true"></DxToolbarItem>
+                    </Items>
+                </DxToolbar>
+            </Template>
+        </DxGridLayoutItem>
+        @foreach (var jig in jigs)
+        {
+            <DxGridLayoutItem Row="@jig.Row" RowSpan="@jig.RowSpan" Column="@jig.ColumnIndex" ColumnSpan="@jig.ColumnSpan">
+                <Template>
+                    <JigComponemt JigParameter="@jig" IsSelected="@(JigSelected(jig.Id))" SelectClickCB="SelectClick"></JigComponemt>
+                </Template>
+            </DxGridLayoutItem>
+        }
+    </Items>
+</DxGridLayout>
 
 <DxFileInput ExternalSelectButtonCssSelector="#dataimport"
              MaxFileSize="15000000" FilesUploading="FileUpload" AllowMultiFileUpload="false">
 </DxFileInput>
 
-<DxPopup @bind-Visible="@jigContentUploadVisible" Width="50rem">
-    <HeaderTemplate>
-        <div class="w-100 p-3 border border-bottom">
-            <DxToolbar>
-                <Items>
-                    <DxToolbarItem IconCssClass="oi oi-x" Click="ClosePopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
-                </Items>
-            </DxToolbar>
-        </div>
-    </HeaderTemplate>
+<DxPopup @ref="@infoPopup" Width="auto" CloseOnOutsideClick="false">
+    <BodyContentTemplate Context="bodycontext">
+        <DxGrid @ref="@grid" Data="@targetJig?.JigContent"
+                CustomizeEditModel="Grid_CustomizeEditModel" EditMode="GridEditMode.EditRow" EditNewRowPosition="GridEditNewRowPosition.Top"
+                EditModelSaving="Grid_EditModelSaving"
+                DataItemDeleting="Grid_DataItemDeleting"
+                CustomizeElement="Grid_CustomizeElement">
+            <ToolbarTemplate>
+                <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                    <Items>
+                        <DxToolbarItem Text="@($"數量: {targetJig?.JigContent.Count}")" RenderStyleMode="ToolbarItemRenderStyleMode.Plain" Enabled="false" BeginGroup="true"></DxToolbarItem>
+                        <DxToolbarItem Tooltip="手動輸入" BeginGroup="true" Click="StartEditNewJigContent" IconCssClass="bi bi-align-top" Alignment="ToolbarItemAlignment.Left" />
+                    </Items>
+                </DxToolbar>
+            </ToolbarTemplate>
+            <Columns>
+                <DxGridCommandColumn DeleteButtonVisible="false">
+                    <HeaderTemplate>
+                        <div>編輯</div>
+                    </HeaderTemplate>
+                    <CellDisplayTemplate>
+                        <DxButton IconCssClass="oi oi-pencil" CssClass="m-1" RenderStyle="ButtonRenderStyle.Info"
+                                  Click="async () => grid?.StartEditRowAsync(context.VisibleIndex)" />
+                    </CellDisplayTemplate>
+                </DxGridCommandColumn>
+                <DxGridDataColumn FieldName="@nameof(JigContent.Name)" />
+                <DxGridDataColumn FieldName="@nameof(JigContent.MaterialCode)">
+                    <CellEditTemplate>
+                        @{
+                            var jigContent = (JigContent)context.EditModel;
+                        }
+                        <DxComboBox Data="@(GetMaterialsWithFilter())"
+                                    @bind-Value="@jigContent.MaterialCode"
+                                    TextFieldName="@nameof(Material.Name)"
+                                    ValueFieldName="@nameof(Material.TypeCode)">
+                        </DxComboBox>
+                    </CellEditTemplate>
+                    <CellDisplayTemplate>
+                        @{
+                            var jigContent = (JigContent)context.DataItem;
+                        }
+                        <div>@(GetNameFromMaterialCode(jigContent.MaterialCode))</div>
+                    </CellDisplayTemplate>
+                </DxGridDataColumn>
+                <DxGridDataColumn FieldName="@nameof(JigContent.Heat)" />
+                <DxGridDataColumn FieldName="@nameof(JigContent.Thickness)" />
+                <DxGridDataColumn FieldName="@nameof(JigContent.PushToStartTime)" DisplayFormat="G" />
+                <DxGridDataColumn FieldName="@nameof(JigContent.StartJigId)"/>
+                <DxGridCommandColumn EditButtonVisible="false" SaveButtonVisible="false" CancelButtonVisible="false">
+                    <HeaderTemplate>
+                        <div>刪除</div>
+                    </HeaderTemplate>
+                    <CellDisplayTemplate>
+                        <DxButton IconCssClass="oi oi-trash" CssClass="m-1" RenderStyle="ButtonRenderStyle.Danger"
+                                  Click="async () => grid?.ShowRowDeleteConfirmation(context.VisibleIndex)" />
+                    </CellDisplayTemplate>
+                </DxGridCommandColumn>
+            </Columns>
+        </DxGrid>
+    </BodyContentTemplate>
+</DxPopup>
+
+<DxPopup @ref="@uploadPopup" Width="50rem">
     <BodyContentTemplate Context="bodycontext">
         <DxFormLayout>
             <DxFormLayoutItem ColSpanLg="12">
@@ -105,7 +133,7 @@
                 </DxToolbar>
             </DxFormLayoutItem>
         </DxFormLayout>
-        
+
     </BodyContentTemplate>
 </DxPopup>
 
@@ -113,18 +141,83 @@
     [Parameter]
     public string JigAreaCode { get; set; } = null!;
 
+    private IEnumerable<Material> materials = new List<Material>();
+
     private List<Jig> jigs = new List<Jig>();
     private Jig? targetJig;
     private bool hasTargetJig => targetJig is not null;
-    private bool drawerVisible = false;
 
-    private bool jigContentUploadVisible = false;
     private List<JigContent> jigContentsFromFile = new();
+    private DxPopup? infoPopup { get; set; }
+    private async Task ShowInfoPopup()
+    {
+        await infoPopup?.ShowAsync();
+    }
+    private async Task CloseInfoPopup()
+    {
+        await infoPopup?.CloseAsync();
+    }
+
+    private DxPopup? uploadPopup { get; set; }
+    private async Task ShowUploadPopup()
+    {
+        await uploadPopup?.ShowAsync();
+    }
+    private async Task CloseUploadPopup()
+    {
+        await uploadPopup?.CloseAsync();
+    }
+
+
+    private IGrid? grid { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        materials = await dataService.GetAllMaterials();
+        await UpdateJigAndContent();
+
+        dataService.JigChangedFunc += UpdateJigAndContent;
+    }
+
+    #region ui
+    private void Grid_CustomizeElement(GridCustomizeElementEventArgs e)
+    {
+        if (e.ElementType == GridElementType.DataRow && (bool)e.Grid.GetRowValue(e.VisibleIndex, "ImportOrType"))
+        {
+            e.CssClass = "bg-warning-subtle";
+        }
+    }
+
+    private string GetNameFromMaterialCode(int i)
+    {
+        if (i == 0)
+            return "通用";
+        var m = materials.FirstOrDefault(x => x.TypeCode == i);
+        return m is not null ? m.Name : "未定義";
+
+    }
+
+    private IEnumerable<Material> GetMaterialsWithFilter()
+    {
+        if (!hasTargetJig)
+        {
+            return new List<Material>();
+        }
+        else
+        {
+            return targetJig.MaterialFree ? materials : materials.Where(x => x.TypeCode == targetJig.MaterialTypeCode);
+        }
+    }
+
+    #endregion
+    private async Task UpdateJigAndContent()
+    {
         jigs = await dataService.GetJigsByArea(JigAreaCode);
-        await base.OnInitializedAsync();
+        if (hasTargetJig)
+        {
+            targetJig = jigs.FirstOrDefault(x => x.Id == targetJig.Id);
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     private void SelectClick(Guid jigId)
@@ -132,12 +225,9 @@
         targetJig = jigs.FirstOrDefault(x => x.Id == jigId);
     }
 
-    private void InfoClick()
+    private async Task InfoClick()
     {
-        if (targetJig is not null)
-        {
-            ShowDrawer();
-        }
+        await ShowInfoPopup();
     }
 
     private bool JigSelected(Guid id)
@@ -152,15 +242,12 @@
         }
     }
 
-    private void ShowDrawer() => drawerVisible = true;
-    private void CloseDrawer() => drawerVisible = false;
-
     private async Task FileUpload(FilesUploadingEventArgs args)
     {
         try
         {
             jigContentsFromFile = await dataService.GetJigContentFromFile(args.Files);
-            ShowPopup();
+            await ShowUploadPopup();
         }
         catch (Exception ex)
         {
@@ -169,8 +256,41 @@
 
     }
 
-    private void ShowPopup() => jigContentUploadVisible = true;
-    private void ClosePopup() => jigContentUploadVisible = false;
+
+    private async Task StartEditNewJigContent()
+    {
+        await grid?.StartEditNewRowAsync();
+    }
+
+    private void Grid_CustomizeEditModel(GridCustomizeEditModelEventArgs e)
+    {
+        if (e.EditModel is JigContent jigContent)
+        {
+            if (e.IsNew)
+            {
+                jigContent.Name = DateTime.Now.ToString("yyyyMMddHHmmss");
+                jigContent.InitContentToJig(targetJig);
+                jigContent.ImportOrType = true;
+            }
+        }
+    }
+
+    private async Task Grid_EditModelSaving(GridEditModelSavingEventArgs e)
+    {
+        if (e.EditModel is JigContent jigContent)
+        {
+            await dataService.UpsertJigContent(jigContent);
+        }
+    }
+
+    private async Task Grid_DataItemDeleting(GridDataItemDeletingEventArgs e)
+    {
+        if (e.DataItem is JigContent jigContent)
+        {
+            var result = await dataService.RemoveJigContentBeforeStart(jigContent);
+            notificationService.ShowToast(result);
+        }
+    }
 
     private async Task UpsertJigContent()
     {
@@ -179,8 +299,9 @@
             notificationService.ShowToast(new RequestResult(4, "請選擇治具或上傳內容"));
             return;
         }
-        var result = await dataService.StartPushIntoJig(targetJig, jigContentsFromFile);
+        var result = await dataService.UpdateJigContentToJigFromExcel(targetJig, jigContentsFromFile);
+        await CloseUploadPopup();
         notificationService.ShowToast(result);
-        jigContentUploadVisible = false;
+
     }
 }

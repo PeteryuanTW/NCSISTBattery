@@ -11,9 +11,10 @@ namespace NCSISTBattery.EFModel
         [Required]
         public string Name { get; set; } = null!;
         [Required]
-        public ushort TypeCode { get; set; }
+        [Range(1, int.MaxValue)]
+        public int TypeCode { get; set; }
         [Required]
-        public ushort StyleIndex { get; set; }
+        public int StyleIndex { get; set; }
         public virtual ICollection<RecipeContent> RecipeContents { get; set; } = null!;
         
     }

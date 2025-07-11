@@ -2,22 +2,109 @@
 @rendermode InteractiveServer
 
 @inject ShopfloorService shopfloorService
+@inject NotificationService notificationService
 
+<DxStackLayout CssClass="w-100 ch-480" Orientation="@Orientation.Vertical">
+    <Items>
+        <DxStackLayoutItem Length="2fr">
+            <Template>
+                <DxToolbar ItemRenderStyleMode="@ToolbarRenderStyleMode.Contained">
+                    <Items>
+                        <DxToolbarItem IconCssClass="oi oi-clipboard" Click="BetchDeployShow" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                        <DxToolbarItem IconCssClass="oi oi-media-play" Click="BetchRunStations" RenderStyle="ButtonRenderStyle.Success" BeginGroup="true" />
+                    </Items>
+                </DxToolbar>
+            </Template>
+        </DxStackLayoutItem>
+        <DxStackLayoutItem Length="10fr">
+            <Template>
+                <div class="p-3 w-100 h-100 d-flex flex-wrap justify-content-center align-items-center gap-1 overflow-y-auto">
+                    @foreach (var s in Stations)
+                    {
+                        <StationUIComponent StationParam="@s" />
+                    }
+                </div>
+            </Template>
+        </DxStackLayoutItem>
+    </Items>
+</DxStackLayout>
 
-<div class="border border-primary p-3 w-100 h-100 d-flex flex-wrap justify-content-center align-items-center gap-1 overflow-y-auto">
-    @foreach (var s in Stations)
-    {
-        <StationUIComponent StationParam="@s"/>
-    }
-</div>
+<DxPopup @ref="@workorderPopup">
+    <EditForm Model="@workorderIdModel" OnValidSubmit="BetchDeployWorkorders" Context="EditFormContext">
+        <DataAnnotationsValidator />
+        <DxFormLayout>
+            <DxFormLayoutItem ColSpanLg="12" Caption="@($"工單-批號")" CaptionPosition="CaptionPosition.Vertical">
+                <DxComboBox Data="@workorders" @bind-Value="@workorderIdModel.WorkorderID" ValueFieldName="@nameof(Workorder.Id)" TextFieldName="@nameof(Workorder.WorkorderNoAndLot)"></DxComboBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem ColSpanLg="12">
+                <hr />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                <DxToolbar>
+                    <Items>
+                        <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                    </Items>
+                </DxToolbar>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </EditForm>
+</DxPopup>
 
 
 @code {
     private List<Station> Stations = new();
+    private IEnumerable<Workorder> workorders = new List<Workorder>();
+    private WorkorderIdModel workorderIdModel = new();
 
-    protected override Task OnInitializedAsync()
+    private DxPopup? workorderPopup { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
     {
         Stations = shopfloorService.Stations;
-        return base.OnInitializedAsync();
+        workorders = await shopfloorService.GetAllWorkordersConfig();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task BetchDeployShow()
+    {
+        workorderIdModel = new();
+        await workorderPopup?.ShowAsync();
+    }
+
+    private async Task BetchDeployWorkorders()
+    {
+        var deployTasks = Stations.Select(x => shopfloorService.DeployWorkorderToStation(x.Id, workorderIdModel));
+        var deployRes = await Task.WhenAll(deployTasks);
+        var anyFail = deployRes.Where(x => !x.IsSuccess);
+        if (anyFail.Any())
+        {
+            var failMsgs = anyFail.Select(x => x.Msg);
+            var failMsg = string.Join(", ", failMsgs);
+            notificationService.ShowToast(new(4, failMsg));
+        }
+        else
+        {
+            notificationService.ShowToast(new(2, $"Deploy to all stations success"));
+        }
+        await workorderPopup?.CloseAsync();
+    }
+
+    private async Task BetchRunStations()
+    {
+        var runTasks = Stations.Select(x => shopfloorService.RunStation(x.Id));
+        var runRes = await Task.WhenAll(runTasks);
+        var anyFail = runRes.Where(x => !x.IsSuccess);
+        if (anyFail.Any())
+        {
+            var failMsgs = anyFail.Select(x => x.Msg);
+            var failMsg = string.Join(", ", failMsgs);
+            notificationService.ShowToast(new(4, failMsg));
+        }
+        else
+        {
+            notificationService.ShowToast(new(2, $"Run all stations success"));
+        }
+        await workorderPopup?.CloseAsync();
     }
 }

@@ -36,14 +36,14 @@
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="名稱" ColSpanLg="6" BeginRow="true">
                     <DxTextBox @bind-Text="@taregtMaterial.Name" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
-                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="類型" ColSpanLg="3">
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="類型編碼" ColSpanLg="3">
                     <DxSpinEdit @bind-Value="@taregtMaterial.TypeCode" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="顏色" ColSpanLg="6">
                     <DxComboBox Data="@heatpieceStyleWrapperClasses" @bind-Value="@taregtMaterial.StyleIndex" ValueFieldName="@nameof(HeatpieceStyleWrapperClass.Index)" TextFieldName="@nameof(HeatpieceStyleWrapperClass.DisplayName)"></DxComboBox>
                 </DxFormLayoutItem>
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="預覽" ColSpanLg="6">
-                    <DxButton Text="@($"{taregtMaterial?.Name}({taregtMaterial?.TypeCode})")" RenderStyle="@((ButtonRenderStyle)taregtMaterial.StyleIndex)" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
+                    <DxButton @bind-Text="@taregtMaterial.Name" RenderStyle="@((ButtonRenderStyle)taregtMaterial.StyleIndex)" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
                 </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="12">
                     <hr />

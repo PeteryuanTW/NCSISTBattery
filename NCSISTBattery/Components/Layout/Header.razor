@@ -3,15 +3,14 @@
 
 <div class="card p-2 " style="margin:1rem">
     <DxMenu Orientation="Orientation.Horizontal"
-    DropDownActionMode="MenuDropDownActionMode.Click"
-    DisplayMode="MenuDisplayMode.Desktop"
-    CollapseItemsToHamburgerMenu="true"
-    CollapseItemToIconMode="MenuCollapseItemToIconMode.All">
+            DropDownActionMode="MenuDropDownActionMode.Click"
+            DisplayMode="MenuDisplayMode.Desktop"
+            CollapseItemsToHamburgerMenu="true"
+            CollapseItemToIconMode="MenuCollapseItemToIconMode.All">
         <Items>
             <DxMenuItem Text="排片狀態" IconCssClass="oi oi-menu" NavigateUrl="/" Position="ItemPosition.Center" />
             <DxMenuItem Text="製造現場" IconCssClass="oi oi-laptop" Position="ItemPosition.Center">
                 <Items>
-                    <DxMenuItem IconCssClass="oi oi-cog" Text="製程設定" NavigateUrl="/ProcessSetting" />
                     <DxMenuItem Text="工站狀態" NavigateUrl="/StationsPage" IconCssClass="oi oi-dashboard" />
                     <DxMenuItem Text="組裝狀態" IconCssClass="oi oi-dashboard">
                         <Items>
@@ -23,18 +22,26 @@
                     </DxMenuItem>
                 </Items>
             </DxMenuItem>
-            <DxMenuItem Text="地圖" IconCssClass="oi oi-map" Position="ItemPosition.Center">
+            @* <DxMenuItem Text="地圖" IconCssClass="oi oi-map" Position="ItemPosition.Center">
                 <Items>
                     <DxMenuItem IconCssClass="oi oi-map-marker" Text="編輯" NavigateUrl="/MapSettingPage" />
                     <DxMenuItem Text="動態儀錶板" NavigateUrl="/" IconCssClass="oi oi-dashboard" />
                 </Items>
-            </DxMenuItem>
+            </DxMenuItem> *@
             <DxMenuItem Text="製程參數" IconCssClass="oi oi-info" Position="ItemPosition.Center">
                 <Items>
                     <DxMenuItem Text="原料種類" IconCssClass="oi oi-contrast" NavigateUrl="/MaterialSetting" />
                     <DxMenuItem Text="配方編輯" IconCssClass="oi oi-list" NavigateUrl="/RecipeSetting" />
                 </Items>
             </DxMenuItem>
+            <DxMenuItem Text="開發者" IconCssClass="bi bi-people" Position="ItemPosition.Center">
+                <Items>
+                    <DxMenuItem IconCssClass="oi oi-cog" Text="製程設定" NavigateUrl="/ProcessSetting" />
+                    <DxMenuItem Text="治具" IconCssClass="bi bi-align-bottom" NavigateUrl="/JigsSetting" />
+                    <DxMenuItem Text="Swagger" IconCssClass="bi bi-braces-asterisk" NavigateUrl="/swagger" />
+                </Items>
+            </DxMenuItem>
+
         </Items>
     </DxMenu>
 </div>

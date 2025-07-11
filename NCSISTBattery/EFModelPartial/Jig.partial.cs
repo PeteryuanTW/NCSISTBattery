@@ -9,7 +9,6 @@ namespace NCSISTBattery.EFModel
         [NotMapped]
         public List<JigContent> JigContent => jigContent.ToList();
         public void ImportContents(List<JigContent> newjigContents)
-        
         {
             foreach (var newjigContent in newjigContents.OrderBy(x=>x.PushToStartTime))
             {
@@ -17,42 +16,9 @@ namespace NCSISTBattery.EFModel
             }
         }
 
-        //public void PushHeatPiece(JigContent heatPiece)
-        //{
-        //    if (!IsDestination)
-        //    {
-        //        heatPiece.StartJigId = Id;
-        //    }
-        //    else
-        //    {
-        //        heatPiece.DestinationJigId = Id;
-        //    }
-        //    jigContent.Push(heatPiece);
-        //}
-
-        //public JigContent? peekHeatPiece()
-        //{
-        //    try
-        //    {
-        //        return jigContent.Peek();
-        //    }
-        //    catch
-        //    {
-        //        return null;
-        //    }
-        //}
-
-        //public JigContent? PopupHeatPiece()
-        //{
-        //    try
-        //    {
-        //        return jigContent.Pop();
-        //    }
-        //    catch
-        //    {
-        //        return null;
-        //    }
-        //}
-
+        public void PushJigContent(JigContent newjigContent)
+        {
+            jigContent.Push(newjigContent);
+        }
     }
 }

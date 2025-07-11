@@ -11,6 +11,7 @@ namespace NCSISTBattery.EFModel
         public void InitContentToJig(Jig jig)
         {
             StartJigId = jig.Id;
+            MaterialCode = jig.MaterialTypeCode;
             PushToStartTime = DateTime.Now;
         }
     }

@@ -5,11 +5,15 @@ using CommonLibraryP.NotificationUtility;
 using CommonLibraryP.ShopfloorPKG;
 using DevExpress.Blazor;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using NCSISTBattery;
+using NCSISTBattery.AutoMapper;
 using NCSISTBattery.Components;
 using NCSISTBattery.EFModel;
 using NCSISTBattery.Machine;
 using NCSISTBattery.Services;
 using OfficeOpenXml;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Drawing;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +30,11 @@ builder.Services.AddDevExpressBlazor(options => {
 //builder.AddMachineService();
 //MachineTypeEnumHelper.AddCustomConnection<CustomModbusMachine>(10);
 //CommonEnumHelper.AddCustomStatus(150, "Custom Status", ButtonRenderStyle.Danger, Color.FromArgb(204, 0, 0));
+
+builder.Services.AddOptions<APISetting>()
+    .Bind(builder.Configuration.GetSection("APISetting"))
+    .ValidateDataAnnotations(); // 如果你有 [Required] 等屬性
+
 
 
 builder.AddShopfloorService();
@@ -46,11 +55,14 @@ builder.Services.AddHostedService<InitService>();
 builder.Services.AddMvc();
 
 
-builder.Services.AddControllers(); // 如果還沒加
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.EnableAnnotations();
+});
 
-
+builder.Services.AddAutoMapper(typeof(RecipeMappingProfile));
 
 
 ExcelPackage.License.SetNonCommercialOrganization("TM Robot");
@@ -77,6 +89,7 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+
 });
 app.MapControllers(); // 確保有這行
 

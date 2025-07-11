@@ -30,7 +30,7 @@ namespace NCSISTBattery.Data
                     "GantryArea" => "龍門區",
                     "PorcessingArea" => "在製區",
                     "ElectrodeHandleArea" => "極柄區",
-                    _ => "未知",
+                    _ => "未定義",
                 };
             }
             else

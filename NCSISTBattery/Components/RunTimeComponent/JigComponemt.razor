@@ -1,11 +1,12 @@
 ﻿@rendermode InteractiveServer
 @inject DataService dataService
 
+
 <div class="w-100 h-100 rounded border @(BorderColorCss)" @onclick="SelectClick">
     <DxGridLayout>
         <Rows>
-            <DxGridLayoutRow Height="8fr" Areas="name"></DxGridLayoutRow>
-            <DxGridLayoutRow Height="4fr" Areas="btn"></DxGridLayoutRow>
+            <DxGridLayoutRow Height="12fr" Areas="name"></DxGridLayoutRow>
+            @* <DxGridLayoutRow Height="4fr" Areas="btn"></DxGridLayoutRow> *@
         </Rows>
         <Columns>
             <DxGridLayoutColumn Width="12fr"></DxGridLayoutColumn>
@@ -13,18 +14,21 @@
         <Items>
             <DxGridLayoutItem Area="name">
                 <Template>
-                    <div class="d-flex justify-content-center align-items-center h-100 fs-3 @(TextColorCss)">
-                        @($"{JigParameter.Name}({material})")
+                    <div class="d-flex flex-column justify-content-center align-items-center h-100 fs-3 @(TextColorCss)">
+                        <div>@($"{JigParameter.Name}")</div>
+                        <div>
+                            <DxButton Text="@(materialName)" RenderStyle="@materialButtonStyle" RenderStyleMode="ButtonRenderStyleMode.Outline" Enabled="false"></DxButton>
+                        </div>
                     </div>
                 </Template>
             </DxGridLayoutItem>
-            <DxGridLayoutItem Area="btn">
+            @* <DxGridLayoutItem Area="btn">
                 <Template>
                     <div class="d-flex justify-content-center align-items-center">
                         <DxButton Click="InfoBtnClick" IconCssClass="bi bi-info-lg" RenderStyle="@infoBtnStyle" Visible="@IsSelected" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
                     </div>
                 </Template>
-            </DxGridLayoutItem>
+            </DxGridLayoutItem> *@
         </Items>
     </DxGridLayout>
 </div>
@@ -42,23 +46,27 @@
     [Parameter]
     public EventCallback InfoClickCB { get; set; }
 
-    private string material = string.Empty;
+    private IEnumerable<Material> materials = new List<Material>();
+    private string materialName = string.Empty;
+    private ButtonRenderStyle materialButtonStyle;
 
     protected override async Task OnInitializedAsync()
     {
-        await GetMaterialByCode();
+        await GetMaterials();
         await base.OnInitializedAsync();
     }
 
-    private async Task GetMaterialByCode()
+    private async Task GetMaterials()
     {
         if (JigParameter.MaterialTypeCode is 0)
         {
-            material = "通用";
+            materialName = "通用";
+            materialButtonStyle = ButtonRenderStyle.None;
             return;
         }
         var target = await dataService.GetMaterialByCode(JigParameter.MaterialTypeCode);
-        material = target is not null ? target.Name : "未定義";
+        materialName = target is not null ? target.Name : "未定義";
+        materialButtonStyle = target is not null ? (ButtonRenderStyle)target.StyleIndex : ButtonRenderStyle.None;
     }
 
     private async Task SelectClick()
